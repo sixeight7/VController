@@ -3,6 +3,8 @@ Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
 
 Start with VController.ino to browse this code. It has the main setup and loop from where all the other files are called.
 
+I tried to seperate the different tasks of the VController in the different files. Complete seperation is not possible, but it helps a great deal in finding stuff back.
+
 Short desciption of each file:
 
 B_settings.ino: contains the basic settings for the pedal, like MIDI addresses and function of switches.
@@ -19,3 +21,4 @@ Switch_control: basically deals with patch changes and provides the framework fo
 Switch_funcs: the place for some special pedal functions, like global tuner, global page up and down, etc.
 
 More details are up in my project blog.
+The project is not yet finished.
