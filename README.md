@@ -1,6 +1,8 @@
 # VController
 Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
 
+Make sure you have the https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/LiquidCrystal_V1.2.1.zip library installed. It is the only non-standard library used in this sketch.
+
 Start with VController.ino to browse this code. It has the main setup and loop from where all the other files are called.
 
 I tried to seperate the different tasks of the VController in the different files. Complete seperation is not possible, but it helps a great deal in finding stuff back.
