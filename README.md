@@ -2,7 +2,7 @@
 Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
 
 # Hardware
-Teensy LC, 12 switches and 12 neopixel LEDs, 1602 LCD display, some additional pats and an enclosure
+Teensy LC, 12 switches and 12 neopixel LEDs, 1602 LCD display, some additional parts and an enclosure.
 See my project blog for details and schematic.
 
 # Software
