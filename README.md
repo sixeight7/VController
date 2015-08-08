@@ -1,6 +1,8 @@
 # VController
 Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
 
+# prerequisites
+Developed on Teensy LC. 
 Make sure you have the https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/LiquidCrystal_V1.2.1.zip library installed. It is the only non-standard library used in this sketch.
 
 Start with VController.ino to browse this code. It has the main setup and loop from where all the other files are called.
@@ -23,4 +25,8 @@ Switch_control: basically deals with patch changes and provides the framework fo
 Switch_funcs: the place for some special pedal functions, like global tuner, global page up and down, etc.
 
 More details are up in my project blog.
-The project is not yet finished.
+
+# To do
+Stompbox mode for GR55.
+Improve stompbox mode for VG99. It still has some issues.
+Global tap tempo
