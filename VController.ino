@@ -21,7 +21,7 @@
 ****************************************************************************/
 
 /****************************************************************************
-** V-Controller v1
+** V-Controller v1 beta
 ** Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
 ** Hardware: Teensy LC, 12x 5mm Neopixel LEDs, 1402 LCD with serial interface, MIDI in/out port
 **
@@ -51,5 +51,6 @@ void loop()
   main_LCD_control();
   main_LED_control();
   main_MIDI_common();
+  main_switch_funcs();
   //show_status_message("bank:"+String(GR55_bank_number) + " patch:"+String(GR55_patch_number));
 }

@@ -28,6 +28,8 @@ uint8_t GP10_MIDI_channel = 1;
 uint8_t GR55_MIDI_channel = 7;
 uint8_t VG99_MIDI_channel = 8;
 
+bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all patches will remain the same. Set it by using the tap tempo of the V-Controller
+
 // ****************** SECTION 2: SWITCH SETUP ******************
 // ***** Set functionality of the top three mode switches - make sure it matches the LED definitions below
 #define SWITCH10_FUNC toggle_mode(MODE_VG99_PATCH, MODE_STOMP_3)
@@ -80,9 +82,9 @@ uint8_t VG99_MIDI_channel = 8;
 #define STOMP_SWITCH1_8_RELEASE nothing() 
 #define STOMP_SWITCH1_8_LED global_tuner_LED
 
-#define STOMP_SWITCH1_9_PRESS nothing()
+#define STOMP_SWITCH1_9_PRESS global_tap_tempo()
 #define STOMP_SWITCH1_9_RELEASE nothing() 
-#define STOMP_SWITCH1_9_LED LEDoff
+#define STOMP_SWITCH1_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 2 - make sure you connect both the stomp and the LED!
 #define STOMP_SWITCH2_1_PRESS nothing()
@@ -117,9 +119,9 @@ uint8_t VG99_MIDI_channel = 8;
 #define STOMP_SWITCH2_8_RELEASE nothing() 
 #define STOMP_SWITCH2_8_LED global_tuner_LED
 
-#define STOMP_SWITCH2_9_PRESS nothing()
+#define STOMP_SWITCH2_9_PRESS global_tap_tempo()
 #define STOMP_SWITCH2_9_RELEASE nothing() 
-#define STOMP_SWITCH2_9_LED LEDoff
+#define STOMP_SWITCH2_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 3 - make sure you connect both the stomp and the LED!
 #define STOMP_SWITCH3_1_PRESS FC300_stomp_press(0)
@@ -154,9 +156,9 @@ uint8_t VG99_MIDI_channel = 8;
 #define STOMP_SWITCH3_8_RELEASE FC300_stomp_release(7)
 #define STOMP_SWITCH3_8_LED FC300_ctls[7].LED
 
-#define STOMP_SWITCH3_9_PRESS start_global_tuner()
+#define STOMP_SWITCH3_9_PRESS global_tap_tempo()
 #define STOMP_SWITCH3_9_RELEASE nothing()
-#define STOMP_SWITCH3_9_LED global_tuner_LED
+#define STOMP_SWITCH3_9_LED global_tap_tempo_LED
 
 // ****************** SECTION 3: PATCH UP/DOWN PATCH EXTEND SETUP ******************
 // GP-10 bank extend (when using bank up/down) - set values between 0 and 9.
@@ -182,6 +184,7 @@ uint8_t FC300_device_id = 0x00;
 // Pedal can be in different modes. In each mode the buttons have different functions
 uint8_t mode = 0; // Variable mode is declared. Last state is remembered in EEPROM
 uint8_t previous_mode = 0;
+uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEPROM
 
 // To make the code more readable, all the states are given a desciptive name
 #define MODE_TUNER 0

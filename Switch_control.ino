@@ -292,7 +292,7 @@ void switchcheck_MODE_VG99_PATCH()
   if (switch_pressed < 10) {
     if (VG99_bank_selection_active == false) VG99_bank_number = (VG99_patch_number / 10); //Reset the bank to current patch
     VG99_patch_number = (VG99_bank_number) * 10 + (switch_pressed - 1);
-    VG99_SendProgramChange();
+    VG99_SendPatchChange();
     VG99_bank_selection_active = false;
   }
 }
@@ -322,13 +322,13 @@ void switchcheck_MODE_VG99_DIRECTSELECT2()
   if (switch_pressed < 10) {
     select_mode(MODE_VG99_PATCH);
     VG99_patch_number = (VG99_bank_number) * 10 + (switch_pressed - 1);
-    VG99_SendProgramChange();
+    VG99_SendPatchChange();
   }
   if (switch_pressed == 10) {
     select_mode(MODE_VG99_PATCH);
     VG99_patch_number = (VG99_bank_number) * 10 - 1;
     VG99_bank_number = VG99_bank_number - 1;
-    VG99_SendProgramChange();
+    VG99_SendPatchChange();
     switch10_used = true;
   }
 }

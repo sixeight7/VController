@@ -20,6 +20,10 @@
 **
 ****************************************************************************/
 
+void main_switch_funcs() {
+  update_tap_tempo_LED();
+}
+
 // Common switch functions
 
 void nothing() { // A dummy function that besically does nothing
@@ -127,4 +131,97 @@ void VG99_bank_updown(bool updown) {
   }
 
   if (VG99_bank_number == (VG99_patch_number / 10)) VG99_bank_selection_active = false; //Check whether were back to the original bank
+}
+
+// ************************ Start Global tap tempo ************************
+// Call global_tap_tempo()
+// We only support bpms from 40 to 250:
+#define MIN_TIME 240000 // (60.000.000 / 250 bpm)
+#define MAX_TIME 1500000 // (60.000.000 / 40 bpm)
+
+#define NUMBER_OF_TAPMEMS 5 // Tap tempo will do the average of five
+uint32_t tap_time[NUMBER_OF_TAPMEMS];
+uint8_t tap_time_index = 0;
+uint32_t new_time, time_diff, avg_time;
+uint32_t prev_time = 0;
+
+void global_tap_tempo() {
+
+  new_time = micros(); //Store the current time
+  time_diff = new_time - prev_time;
+  prev_time = new_time;
+  Serial.println("Tap no:" + String(tap_time_index) + " " + String(time_diff));
+
+  // If time difference between two taps is too short or too long, we will start new tapping sequence
+  if ((time_diff < MIN_TIME) || (time_diff > MAX_TIME)) {
+    tap_time_index = 0;
+  }
+  else {
+
+    // Shift tapmems to the left if neccesary
+    if (tap_time_index >= NUMBER_OF_TAPMEMS) {
+      for (uint8_t i = 1; i < NUMBER_OF_TAPMEMS; i++) {
+        tap_time[i - 1] = tap_time[i];
+      }
+      tap_time_index--;  // A little wild, but now it works!
+    }
+
+    // Store time difference in memory
+    tap_time[tap_time_index] = time_diff;
+
+    //Calculate the average time
+    //First add all the valid times up
+    uint32_t total_time = 0;
+    for (uint8_t j = 0; j <= tap_time_index; j++) {
+      total_time = total_time + tap_time[j];
+      Serial.print(String(tap_time[j]) + " ");
+    }
+    //Then calculate the average time
+    avg_time = total_time / (tap_time_index + 1);
+    bpm = ((60000000 + (avg_time / 2)) / avg_time); // Calculate the bpm
+    EEPROM.write(EEPROM_bpm, bpm);  // Store it in EEPROM
+    Serial.println(" tot:" + String(total_time) + " avg:" + String(avg_time));
+    
+    // Send it to the devices
+    GP10_send_bpm();
+
+    // Move to the next memory slot
+    tap_time_index++;
+  }
+  show_status_message("Tempo " + String(bpm) + " bpm");
+  reset_tap_tempo_LED();
+}
+
+#define BPM_LED_ON_TIME 50 // The time the bpm LED is on in msec
+uint32_t bpm_LED_timer = 0;
+uint32_t bpm_LED_timer_length = BPM_LED_ON_TIME;
+  
+void update_tap_tempo_LED() {
+  
+  // Check if timer needs to be set
+  if (bpm_LED_timer == 0) {
+    bpm_LED_timer = millis();
+  }
+
+  // Check if timer runs out
+  if (millis() - bpm_LED_timer > bpm_LED_timer_length) {
+    bpm_LED_timer = millis(); // Reset the timer
+
+    // If LED is currently on
+    if (global_tap_tempo_LED == BPM_COLOUR_ON) {
+      global_tap_tempo_LED = BPM_COLOUR_OFF;  // Turn the LED off
+      bpm_LED_timer_length = (60000 / bpm) - BPM_LED_ON_TIME; // Set the time for the timer
+    }
+    else {
+      global_tap_tempo_LED = BPM_COLOUR_ON;   // Turn the LED on
+      bpm_LED_timer_length = BPM_LED_ON_TIME; // Set the time for the timer
+    }
+    update_LEDS = true;
+  }
+}
+
+void reset_tap_tempo_LED() {
+  bpm_LED_timer = millis();
+  global_tap_tempo_LED = BPM_COLOUR_ON;    // Turn the LED on
+  bpm_LED_timer_length = BPM_LED_ON_TIME;  // Set the time for the timer
 }

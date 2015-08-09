@@ -41,6 +41,8 @@
 #define VG99_STOMP_COLOUR_OFF 11 //Green
 #define GLOBAL_STOMP_COLOUR_ON 2 //White
 #define GLOBAL_STOMP_COLOUR_OFF 12 //White dimmed
+#define BPM_COLOUR_ON 2
+#define BPM_COLOUR_OFF 0
 
 //Lets make some colours (G,R,B)
 // Adding 100 to a colour number makes the LED flash!
@@ -84,12 +86,12 @@ uint8_t LED_order[12] = { 6, 5, 4, 7, 0, 3, 8, 1, 2, 9, 10, 11}; //Order in whic
 // ************************ Settings you probably won't have to change ************************
 uint8_t *LEDs_stomp_mode_ptr[NUMBER_OF_STOMP_BANKS][9]; // array of pointers that points to the stompbox mode LEDs
 boolean update_LEDS = true;
-boolean LED_flashing[NUMLEDS];
 boolean LED_flashing_state_on = true;
 uint8_t row_select = 0;
 
 // Some LEDs for switch functions
 uint8_t global_tuner_LED = GLOBAL_STOMP_COLOUR_OFF; // LED for the global tuner
+uint8_t global_tap_tempo_LED = BPM_COLOUR_OFF;
 uint8_t LEDoff = 0; // A dummy placeholder for when a LED of a stompbox has to be switches off
 
 #define STARTUP_TIMER_LENGTH 100 // NeoPixel LED switchoff timer set to 100 ms
@@ -110,11 +112,6 @@ void setup_LED_control()
   unsigned int startupTimer = millis();
   while (millis() - startupTimer <= STARTUP_TIMER_LENGTH) {
     LEDs.show();
-  }
-
-  // Set all the LEDs flashing states to off
-  for (uint8_t count = 0; count < NUMLEDS; count++) {
-    LED_flashing[count] = false;
   }
 }
 
@@ -306,9 +303,19 @@ void main_LED_control()
 }
 
 void show_colour(uint8_t LED_number, uint8_t colour_number) { // Sets the specified LED to the specified colour
-  LED_flashing[LED_number] = (colour_number >= 100); // When flashing is flashing, set in in the LED_flashing array
   uint8_t number_fixed = colour_number % 100; // In case of flashing LEDS this will take off the extra 100.
-  LEDs.setPixelColor(LED_order[LED_number], LEDs.Color(colours[number_fixed][0], colours[number_fixed][1], colours[number_fixed][2]));
+  if (colour_number < 100) { // Check if it is not a flashing LED
+    // Turn the LED on
+    LEDs.setPixelColor(LED_order[LED_number], LEDs.Color(colours[number_fixed][0], colours[number_fixed][1], colours[number_fixed][2]));
+  }
+  else if (LED_flashing_state_on == true) {
+    // Turn the LED on
+    LEDs.setPixelColor(LED_order[LED_number], LEDs.Color(colours[number_fixed][0], colours[number_fixed][1], colours[number_fixed][2]));
+  }
+  else {
+    // Turn the LED off
+    LEDs.setPixelColor(LED_order[LED_number], 0, 0, 0);
+  }
 }
 
 void turn_all_LEDs_off() {
@@ -328,17 +335,6 @@ void flash_LEDs() {
   if (millis() - LEDflashTimer > LEDFLASH_TIMER_LENGTH) {
     LEDflashTimer = millis(); // Reset the timer
     LED_flashing_state_on = !LED_flashing_state_on;
-
-    if (LED_flashing_state_on == true) {
-      // Turn flashing LEDs on
-      update_LEDS = true;  //This will turn the LEDs back on
-    }
-    else {
-      // Turn flashing LEDs off
-      for (uint8_t count = 0; count < NUMLEDS; count++) {
-        if (LED_flashing[count] == true) show_colour(count, 0);
-      }
-      LEDs.show();
-    }
+    update_LEDS = true; // Get the LEDs to update
   }
 }

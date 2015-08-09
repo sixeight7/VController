@@ -81,7 +81,7 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
 
 // ********************************* Section 3: GR55 comon MIDI out functions ********************************************
 
-void write_GR55(uint32_t address, uint8_t value)
+void write_GR55(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
@@ -89,6 +89,18 @@ void write_GR55(uint32_t address, uint8_t value)
   usbMIDI.sendSysEx(14, sysexmessage);
   MIDI1.sendSysEx(14, sysexmessage);
   MIDI2.sendSysEx(14, sysexmessage);
+  debug_sysex(sysexmessage, 14, "out(GR55)");
+}
+
+void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
+{
+  uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
+  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t sysexmessage[15] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x053, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
+  usbMIDI.sendSysEx(15, sysexmessage);
+  MIDI1.sendSysEx(15, sysexmessage);
+  MIDI2.sendSysEx(15, sysexmessage);
+  debug_sysex(sysexmessage, 15, "out(GR55)");
 }
 
 void request_GR55(uint32_t address, uint8_t no_of_bytes)

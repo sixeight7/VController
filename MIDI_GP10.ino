@@ -37,6 +37,8 @@
 #define GP10_SOLO_ON 0x2000500B, 0x01
 #define GP10_SOLO_OFF 0x2000500B, 0x00
 
+#define GP10_TEMPO 0x20000801  // Accepts values from 40 bpm - 250 bpm
+
 // ********************************* Section 2: GP10 comon MIDI in functions ********************************************
 
 void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlength)
@@ -48,8 +50,7 @@ void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlengt
     //if ((sxdata[7] == 0x12) && (sxdata[8] == 0x00) && (sxdata[9] == 0x00) && (sxdata[10] == 0x00) && (sxdata[11] == 0x00) ) {
     if (address == 0x00000000) {
       GP10_patch_number = sxdata[12];
-      update_lcd = true;
-      update_LEDS = true;
+      GP10_do_after_patch_selection();
     }
 
     // Check if it is the patch name (address: 0x20, 0x00, 0x00, 0x00)
@@ -82,10 +83,7 @@ void check_PC_in_GP10(byte channel, byte program) {
   // Check the source by checking the channel
   if (channel == GP10_MIDI_channel) { // GP10 outputs a program change
     GP10_patch_number = program;
-    GP10_request_name();
-    GP10_request_stompbox_states();
-    update_LEDS = true;
-    update_lcd = true;
+    GP10_do_after_patch_selection();
   }
 }
 
@@ -97,20 +95,28 @@ void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     show_status_message("GP-10 detected  ");
     GP10_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     GP10_request_patch_number();
-    GP10_request_name();
     write_GP10(GP10_EDITOR_MODE_ON); // Put the GP10 in EDITOR mode - otherwise tuner will not work
-    GP10_request_stompbox_states();
   }
 }
 
 // ********************************* Section 3: GP10 comon MIDI out functions ********************************************
 
-void write_GP10(uint32_t address, uint8_t value)
+void write_GP10(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
   usbMIDI.sendSysEx(15, sysexmessage);
+  debug_sysex(sysexmessage, 15, "out(GP10)");
+}
+
+void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
+{
+  uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
+  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t sysexmessage[16] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
+  usbMIDI.sendSysEx(16, sysexmessage);
+  debug_sysex(sysexmessage, 16, "out(GP10)");
 }
 
 void request_GP10(uint32_t address, uint8_t no_of_bytes)
@@ -136,11 +142,16 @@ void GP10_SendProgramChange(uint8_t new_patch) {
   //  }
 
   usbMIDI.sendProgramChange(new_patch, GP10_MIDI_channel);
+  GP10_do_after_patch_selection();
+}
+
+void GP10_do_after_patch_selection() {
   GP10_request_name();
   GP10_request_stompbox_states();
+  if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GP10_send_bpm();
   update_LEDS = true;
   update_lcd = true;
-  EEPROM.write(EEPROM_GP10_PATCH_NUMBER, new_patch);
+  EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
 }
 
 void GP10_request_patch_number()
@@ -151,6 +162,10 @@ void GP10_request_patch_number()
 void GP10_request_name()
 {
   request_GP10(GP10_REQUEST_PATCH_NAME);
+}
+
+void GP10_send_bpm() {
+  write_GP10(GP10_TEMPO, bpm / 16, bpm % 16); // Tempo is modulus 16. It's all so very logical. NOT.
 }
 
 // ********************************* Section 4: GP10 stompbox functions ********************************************

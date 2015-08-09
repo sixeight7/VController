@@ -42,9 +42,11 @@
 #define VG99_PATCH_CHANGE 0x71000000 //00 00 Patch 001 and 03 0F Patch 400
 
 //Sysex messages for FC300 in sysex mode:
+//I am trying to fool the VG-99 to believe there is an FC300 attached, but it does not work.
 #define FC300_TUNER_ON 0x1002, 0x01 // Does not work for some reason
 #define FC300_TUNER_OFF 0x1002, 0x00
 #define FC300_SYSEX_MODE 0x1000, 0x01 //Tell the VG-99 we are in sysex mode
+#define FC300_WAKE_UP_VG99 0x00000000, 0x02 //Will it fool the VG99 - no :-(
 
 // ********************************* Section 2: VG99 comon MIDI in functions ********************************************
 
@@ -108,15 +110,15 @@ void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     VG99_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     //write_VG99(VG99_EDITOR_MODE_ON); // Put the VG-99 into editor mode - saves lots of messages on the VG99 display, but also overloads the buffer
     //VG99_request_patch_number();
-    write_FC300(0x2000, 0x00);
-    write_FC300(FC300_SYSEX_MODE);
+    write_FC300fc(FC300_SYSEX_MODE);
+    write_FC300own( FC300_WAKE_UP_VG99);
     VG99_request_name();
   }
 }
 
 // ********************************* Section 3: VG99 comon MIDI out functions *******************************************
 
-void write_VG99(uint32_t address, uint8_t value)
+void write_VG99(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
@@ -125,6 +127,17 @@ void write_VG99(uint32_t address, uint8_t value)
   MIDI1.sendSysEx(14, sysexmessage);
   MIDI2.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99)");
+}
+
+void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
+{
+  uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
+  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t sysexmessage[15] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x01C, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
+  usbMIDI.sendSysEx(15, sysexmessage);
+  MIDI1.sendSysEx(15, sysexmessage);
+  MIDI2.sendSysEx(15, sysexmessage);
+  debug_sysex(sysexmessage, 15, "out(VG99)");
 }
 
 void request_VG99(uint32_t address, uint8_t no_of_bytes)
@@ -144,30 +157,22 @@ void VG99_request_name()
 }
 
 
-void VG99_SendProgramChange() {
+void VG99_SendPatchChange() {
+  /*
   MIDI1.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00 - VG99 counts PC up to 100, not 128!
   MIDI1.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   MIDI2.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00 - VG99 counts PC up to 100, not 128!
   MIDI2.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   usbMIDI.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
   usbMIDI.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
+  */
+  write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
   VG99_request_name();
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_VG99_PATCH_MSB, (VG99_patch_number / 256));
   EEPROM.write(EEPROM_VG99_PATCH_LSB, (VG99_patch_number % 256));
   Serial.println("Send PC (VG99):" + String(VG99_patch_number));
-}
-
-void write_FC300(uint16_t address, uint8_t value)
-{
-  uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
-  uint8_t sysexmessage[14] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value, checksum, 0xF7};
-  usbMIDI.sendSysEx(14, sysexmessage);
-  MIDI1.sendSysEx(14, sysexmessage);
-  MIDI2.sendSysEx(14, sysexmessage);
-  debug_sysex(sysexmessage, 14, "out(FC300)");
 }
 
 // ********************************* Section 4: VG99 controller functions ***********************************************
@@ -225,7 +230,7 @@ uint8_t VG99_current_assign = 255; // The assign that is being read - set to a h
 void FC300_stomp_press(uint8_t number) {
 
   // Press the FC300 pedal via sysex
-  write_FC300(FC300_ctls[number].address, 0x7F);
+  write_FC300fc(FC300_ctls[number].address, 0x7F);
   //Serial.println("You pressed: "+String(number));
   // Toggle LED status
   if (FC300_ctls[number].LED == FC300_ctls[number].colour_on) FC300_ctls[number].LED = FC300_ctls[number].colour_off;
@@ -244,7 +249,7 @@ void FC300_stomp_press(uint8_t number) {
 void FC300_stomp_release(uint8_t number) {
 
   // Release the FC300 pedal via sysex
-  write_FC300(FC300_ctls[number].address, 0x00);
+  write_FC300fc(FC300_ctls[number].address, 0x00);
 
   if (FC300_ctls[number].assign_latch == false) {
     if (FC300_ctls[number].assign_on == true) FC300_ctls[number].LED = FC300_ctls[number].colour_off; // Switch the LED off with the GP10 stomp colour

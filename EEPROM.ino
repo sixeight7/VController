@@ -32,6 +32,7 @@
 #define EEPROM_VG99_PATCH_MSB 3
 #define EEPROM_VG99_PATCH_LSB 4
 #define EEPROM_mode 5
+#define EEPROM_bpm 6
 #define EEPROM_stomp_base_address 10 // Store stompbox LEDs from address 10 and higher
 
 void setup_eeprom()
@@ -41,6 +42,7 @@ void setup_eeprom()
   GR55_patch_number = (EEPROM.read(EEPROM_GR55_PATCH_MSB) * 256) + EEPROM.read(EEPROM_GR55_PATCH_LSB);
   VG99_patch_number = (EEPROM.read(EEPROM_VG99_PATCH_MSB) * 256) + EEPROM.read(EEPROM_VG99_PATCH_LSB);
   mode = GP10_patch_number = EEPROM.read(EEPROM_mode);
+   bpm = GP10_patch_number = EEPROM.read(EEPROM_bpm);
 }
 
 void main_eeprom()
