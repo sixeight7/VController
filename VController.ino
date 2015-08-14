@@ -26,7 +26,7 @@
 ** Hardware: Teensy LC, 12x 5mm Neopixel LEDs, 1402 LCD with serial interface, MIDI in/out port
 **
 ** Author: Catrinus Feddema (aka sixeight at vguitarforums.com)
-** Date:   july/august 2015
+** Date:   July/August 2015
 ****************************************************************************/
 
 #include <string.h>

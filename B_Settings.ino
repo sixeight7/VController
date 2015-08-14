@@ -87,17 +87,17 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 2 - make sure you connect both the stomp and the LED!
-#define STOMP_SWITCH2_1_PRESS nothing()
+#define STOMP_SWITCH2_1_PRESS VG99_on_switch()
 #define STOMP_SWITCH2_1_RELEASE nothing() 
-#define STOMP_SWITCH2_1_LED LEDoff
+#define STOMP_SWITCH2_1_LED VG99_ON_LED
 
-#define STOMP_SWITCH2_2_PRESS nothing()
+#define STOMP_SWITCH2_2_PRESS GR55_on_switch()
 #define STOMP_SWITCH2_2_RELEASE nothing() 
-#define STOMP_SWITCH2_2_LED LEDoff
+#define STOMP_SWITCH2_2_LED GR55_ON_LED
 
-#define STOMP_SWITCH2_3_PRESS nothing()
+#define STOMP_SWITCH2_3_PRESS GP10_on_switch()
 #define STOMP_SWITCH2_3_RELEASE nothing() 
-#define STOMP_SWITCH2_3_LED LEDoff
+#define STOMP_SWITCH2_3_LED GP10_ON_LED
 
 #define STOMP_SWITCH2_4_PRESS nothing()
 #define STOMP_SWITCH2_4_RELEASE nothing() 
@@ -182,7 +182,7 @@ uint8_t VG99_device_id = 0x10;
 uint8_t FC300_device_id = 0x00;
 
 // Pedal can be in different modes. In each mode the buttons have different functions
-uint8_t mode = 0; // Variable mode is declared. Last state is remembered in EEPROM
+uint8_t mode = 0; // Variable mode is declared. Last state is remembered in EEPROM. If you set it to a different value than 0, the mode is overruled from EEPROM
 uint8_t previous_mode = 0;
 uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEPROM
 
@@ -204,6 +204,7 @@ uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEP
 #define MODE_GENERIC2_PATCH 14           // Used for other devices  
 #define MODE_GENERIC2_DIRECTSELECT1 15
 #define MODE_GENERIC2_DIRECTSELECT2 16
+#define MODE_COLOUR_MAKER 17 // A special mode for creating new colours on the NEOpixel LEDS
 // All modes with numbers 20 and up are freely assignable stomp banks
 #define MODE_STOMP_1 20 //Used for GP-10 stomp
 #define MODE_STOMP_2 21 //Used for GR-55 stomp
@@ -233,6 +234,11 @@ boolean VG99_detected = false;
 boolean VG99_bank_selection_active = false;
 
 boolean FC300_detected = false;
+
+// For the colour making mode
+uint8_t colour_maker_red = 0;
+uint8_t colour_maker_green = 0;
+uint8_t colour_maker_blue = 0;
 
 
 

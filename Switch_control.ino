@@ -21,7 +21,7 @@
 ****************************************************************************/
 
 // Here are the actual logic of the pedal - what to do after a switch is pressed
-
+// Also you will find the code for GP10, GR55 and VG99 patch behaviour
 
 
 // ************************ Settings you probably won't have to change ************************
@@ -89,6 +89,9 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
           break;
         case MODE_VG99_DIRECTSELECT2:
           switchcheck_MODE_VG99_DIRECTSELECT2();
+          break;
+        case MODE_COLOUR_MAKER:
+        switchcheck_MODE_COLOUR_MAKER();
           break;
         default:
           select_mode(MODE_STOMP_2);
@@ -341,6 +344,15 @@ void select_mode(uint8_t new_mode) {
 void toggle_mode(uint8_t mode1, uint8_t mode2) {
   if (mode == mode1) select_mode(mode2);
   else select_mode(mode1);
+}
+
+void switchcheck_MODE_COLOUR_MAKER() {
+  if ((switch_pressed == 1) && (colour_maker_red > 0)) colour_maker_red--;
+  if ((switch_pressed == 4) && (colour_maker_red < 255)) colour_maker_red++;
+  if ((switch_pressed == 2) && (colour_maker_green > 0)) colour_maker_green--;
+  if ((switch_pressed == 5) && (colour_maker_green < 255)) colour_maker_green++;
+  if ((switch_pressed == 3) && (colour_maker_blue > 0)) colour_maker_blue--;
+  if ((switch_pressed == 6) && (colour_maker_blue < 255)) colour_maker_blue++;
 }
 
 void init_LED_pointers() {

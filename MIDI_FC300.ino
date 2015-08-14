@@ -20,6 +20,8 @@
 **
 ****************************************************************************/
 
+uint8_t FC300_MIDI_port = 0;
+
 // ******************************** MIDI messages and functions for the Roland FC300 ********************************
 // FC300 has two sysex identities. One as itself and one as footcontroller. Therefore every function is double!
 
@@ -32,6 +34,8 @@ void FC300_identity_check(const unsigned char* sxdata, short unsigned int sxleng
     FC300_detected = true;
     show_status_message("FC-300 detected  ");
     FC300_device_id = sxdata[2]; //Byte 2 contains the correct device ID
+    FC300_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
+    Serial.println("FC-300 detected on MIDI port " + String(Current_MIDI_port));
   }
 }
 
@@ -56,3 +60,4 @@ void write_FC300fc(uint16_t address, uint8_t value)
   MIDI2.sendSysEx(12, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(FC300f)");
 }
+

@@ -79,17 +79,23 @@ void main_LCD_control()
       case MODE_STOMP_1:
         lcd.print("Stompbox   GP-10");
         lcd.setCursor (0, 1);       // go to start of 2nd line
-        lcd.print(GP10_patch_name + "    ");
+        lcd.print("                "); //Clear the line first
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print(GP10_patch_name);
         break;
       case MODE_STOMP_2:
         lcd.print("Stompbox   GR-55");
         lcd.setCursor (0, 1);       // go to start of 2nd line
-        lcd.print(GR55_patch_name + "    ");
+        lcd.print("                "); //Clear the line first
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print(GR55_patch_name);
         break;
       case MODE_STOMP_3:
         lcd.print("Stompbox   VG-99");
         lcd.setCursor (0, 1);       // go to start of 2nd line
-        lcd.print(VG99_patch_name + "    ");
+        lcd.print("                "); //Clear the line first
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print(VG99_patch_name);
         break;
 
       // *************************************** GP10 LCD modes ***************************************
@@ -142,7 +148,14 @@ void main_LCD_control()
       case MODE_VG99_DIRECTSELECT2:
         lcd.print("U" + String(VG99_bank_number / 10) + String(VG99_bank_number % 10) + "_       VG-99");
         break;
-
+      case MODE_COLOUR_MAKER:
+        lcd.print("ColourMaker mode");
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print("                "); //Clear the line first
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print("R:" + String(colour_maker_red) + " G:" + String(colour_maker_green) + " B:" + String(colour_maker_blue));
+        break;
+        
       default:
         lcd.print("Status unknown  "); // Just in case you forgot to add some status
     }
