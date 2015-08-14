@@ -816,7 +816,7 @@ void VG99_display_parameter(uint16_t address, uint8_t type) {
   }
 }
 
-// Looks for the on_colour as specified in the VG99_parameters array
+// Looks for the on_colour as specified in the VG99_parameters array.
 uint8_t VG99_find_colour_on(uint16_t address, uint8_t type) {
   uint8_t part;
   uint8_t colour = VG99_STOMP_COLOUR_ON; // Set the default colour
@@ -834,7 +834,7 @@ uint8_t VG99_find_colour_on(uint16_t address, uint8_t type) {
   return colour;
 }
 
-// Looks for the off_colour as specified in the VG99_parameters array
+// Looks for the off_colour as specified in the VG99_parameters array.
 uint8_t VG99_find_colour_off(uint16_t address, uint8_t type) {
   uint8_t part;
   uint8_t colour = VG99_STOMP_COLOUR_OFF; // Set the default colour

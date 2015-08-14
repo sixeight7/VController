@@ -47,7 +47,7 @@
 #define BPM_COLOUR_ON 10 // Green flasing LED
 #define BPM_COLOUR_OFF 0
 
-// Defining FX colours: line6 M13 uses green for Delay, blue for Modulations, purple for filters, yellow for Distortions and orange for Reverbs
+// Defining FX colours:
 #define FX_GTR_COLOUR_ON 6 //White for guitar settings
 #define FX_GTR_COLOUR_OFF 16
 #define FX_DELAY_COLOUR_ON 10 //Green for delays

@@ -370,6 +370,7 @@ void GP10_stomp(uint8_t number) {
   }
 }
 
+// Finds the right colour for an FX LED that is on
 uint8_t GP10_stomp_LED_on_colour(uint8_t number) {
   if (GP10_stomps[number].colour_on == GP10_FX_COLOUR_ON) { // Check if we have to pick the colour from the GP10_FX_colours table
     return GP10_FX_colours[GP10_stomps[number].type][0];  
@@ -379,6 +380,7 @@ uint8_t GP10_stomp_LED_on_colour(uint8_t number) {
   }
 }
 
+// Finds the right colour for an FX LED that is off
 uint8_t GP10_stomp_LED_off_colour(uint8_t number) {
   if (GP10_stomps[number].colour_off == GP10_FX_COLOUR_OFF) { // Check if we have to pick the colour from the GP10_FX_colours table
     return GP10_FX_colours[GP10_stomps[number].type][1];  
