@@ -93,35 +93,43 @@ void OnControlChange(byte channel, byte control, byte value)
 
 void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_comp)
 {
+  //MIDI1.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
+  //MIDI2.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
+  
   if ((sxdata[1] == 0x41) && sx_comp) { //Check if it is a message from a Roland device
     check_SYSEX_in_GP10(sxdata, sxlength);
     check_SYSEX_in_GR55(sxdata, sxlength);
     check_SYSEX_in_VG99(sxdata, sxlength);
-    check_SYSEX_in_FC300(sxdata, sxlength);
+    check_SYSEX_in_VG99fc(sxdata, sxlength);
   }
 
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
     check_SYSEX_in_universal(sxdata, sxlength);
   }
-  else debug_sysex(sxdata, sxlength, "in-USB   ");
-  //MIDI1.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
-  //MIDI2.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
+  else {
+    debug_sysex(sxdata, sxlength, "in-USB   ");
+  }
+  
 }
 
 void OnSerialSysEx(byte *sxdata, unsigned sxlength)
 {
+  //usbMIDI.sendSysEx(sxlength, sxdata); // MIDI through serial to usb
+  
   if (sxdata[1] == 0x41) { //Check if it is a message from a Roland device
     check_SYSEX_in_GP10(sxdata, sxlength);
     check_SYSEX_in_GR55(sxdata, sxlength);
     check_SYSEX_in_VG99(sxdata, sxlength);
-    check_SYSEX_in_FC300(sxdata, sxlength);
+    check_SYSEX_in_VG99fc(sxdata, sxlength);
   }
 
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
     check_SYSEX_in_universal(sxdata, sxlength);
   }
-  else debug_sysex(sxdata, sxlength, "in-serial");
-  //usbMIDI.sendSysEx(sxlength, sxdata); // MIDI through serial to usb
+  else {
+    debug_sysex(sxdata, sxlength, "in-serial");
+  }
+  
 }
 
 void setup_MIDI_common()
@@ -160,7 +168,7 @@ void main_MIDI_common()
 
   check_for_roland_devices();  // Check actively if any roland devices are out there
   send_active_sense();         // Send Active Sense periodically
-  VG99_check_sysex_timer();
+  VG99_check_sysex_watchdog();
 }
 
 // *************************************** Common functions ***************************************
