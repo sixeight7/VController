@@ -121,9 +121,9 @@ uint8_t row_select = 0;
 // Some LEDs for switch functions
 uint8_t global_tuner_LED = GLOBAL_STOMP_COLOUR_OFF; // Global tuner LED
 uint8_t global_tap_tempo_LED = BPM_COLOUR_OFF;      // Tap tempo LED
-uint8_t GP10_ON_LED = GP10_OFF_COLOUR;              // GP10 on/off LED
-uint8_t GR55_ON_LED = GR55_OFF_COLOUR;              // GR55 on/off LED
-uint8_t VG99_ON_LED = VG99_OFF_COLOUR;              // VG99 on/off LED
+uint8_t GP10_select_LED = GP10_OFF_COLOUR;              // GP10 on/off LED
+uint8_t GR55_select_LED = GR55_OFF_COLOUR;              // GR55 on/off LED
+uint8_t VG99_select_LED = VG99_OFF_COLOUR;              // VG99 on/off LED
 uint8_t LEDoff = 0; // A dummy placeholder for when a LED of a stompbox has to be switches off
 
 #define STARTUP_TIMER_LENGTH 100 // NeoPixel LED switchoff timer set to 100 ms

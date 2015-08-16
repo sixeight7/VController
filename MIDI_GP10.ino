@@ -85,7 +85,7 @@ void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlengt
     }
 
     // Check if it is the guitar on/off states
-    GP10_check_onoff_states(sxdata, sxlength);
+    GP10_check_guitar_switch_states(sxdata, sxlength);
 
     // Check if it is some other stompbox function and copy the status to the right LED
     GP10_check_stompbox_states(sxdata, sxlength);
@@ -157,16 +157,9 @@ uint8_t GP10_previous_patch_number = 0;
 uint8_t GP10_patch_memory = 0;
 
 void GP10_SendProgramChange(uint8_t new_patch) {
-  //  if (GP10_patch_number == GP10_previous_patch_number) { // Move to the previous patch
-  //    GP10_patch_number = GP10_patch_memory; // Go to the stored patch location
-  //    GP10_patch_memory = GP10_previous_patch_number; // Remember the current patch - which happens to be the same as the previous one
-  //    GP10_bank_number = (GP10_patch_number / 10); // Update the bank number to the new location
-  //  }
-  //  else { // Choose the current patch
-  //    GP10_patch_memory = GP10_previous_patch_number; // Remember the previous patch
-  //    GP10_previous_patch_number = GP10_patch_number; // Store the current patch
-  //  }
-
+  
+  if (new_patch == GP10_patch_number) GP10_unmute();
+  GP10_patch_number = new_patch;
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendProgramChange(new_patch, GP10_MIDI_channel);
   if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendProgramChange(new_patch, GP10_MIDI_channel);
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendProgramChange(new_patch, GP10_MIDI_channel);
@@ -176,13 +169,15 @@ void GP10_SendProgramChange(uint8_t new_patch) {
 }
 
 void GP10_do_after_patch_selection() {
+  GR55_mute();
+  VG99_mute();
   GP10_request_name();
   Request_GP10_first_stomp();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GP10_send_bpm();
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
-  GP10_request_guitar_onoff_state();
+  GP10_request_guitar_switch_states();
 }
 
 void GP10_request_patch_number()
@@ -201,17 +196,18 @@ void GP10_send_bpm() {
 
 // ********************************* Section 4: GP10 stompbox functions ********************************************
 
-// Switching the GP10 on and off is done by storing the settings of COSM guitar on/off and Normal PU on/off
-// and switching both off when guitar is off and back to original state when switched back on
+// ** US-20 simulation 
+// Selecting and muting the GP10 is done by storing the settings of COSM guitar switch and Normal PU switch
+// and switching both off when guitar is muted and back to original state when the GP10 is selected
 
-void GP10_request_guitar_onoff_state() {
-  GP10_ON_LED = GP10_PATCH_COLOUR; //Switch the LED on
+void GP10_request_guitar_switch_states() {
+  GP10_select_LED = GP10_PATCH_COLOUR; //Switch the LED on
   request_GP10(GP10_COSM_GUITAR_SW, 1);
   request_GP10(GP10_NORMAL_PU_SW, 1);
   GP10_request_onoff = true;
 }
 
-void GP10_check_onoff_states(const unsigned char* sxdata, short unsigned int sxlength) {
+void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned int sxlength) {
   if (GP10_request_onoff == true) {
     uint32_t address = (sxdata[8] << 24) + (sxdata[9] << 16) + (sxdata[10] << 8) + sxdata[11]; // Make the address 32 bit
     if (address == GP10_COSM_GUITAR_SW) {
@@ -225,30 +221,30 @@ void GP10_check_onoff_states(const unsigned char* sxdata, short unsigned int sxl
   }
 }
 
-void GP10_on_switch() {
-  if (GP10_ON_LED == GP10_PATCH_COLOUR) {
+void GP10_select_switch() {
+  if (GP10_select_LED == GP10_PATCH_COLOUR) {
     GP10_always_on = !GP10_always_on; // Toggle GP10_always_on
     if (GP10_always_on) show_status_message("GP10 always ON");
-    else show_status_message("GP10 can be OFF");
+    else show_status_message("GP10 can be muted");
   }
   else {
-    GP10_on();
+    GP10_unmute();
     show_status_message(GP10_patch_name); // Show the correct patch name
   }
-  GR55_off();
-  VG99_off();
+  GR55_mute();
+  VG99_mute();
 }
 
-void GP10_on() {
-  GP10_ON_LED = GP10_PATCH_COLOUR; //Switch the LED on
+void GP10_unmute() {
+  GP10_select_LED = GP10_PATCH_COLOUR; //Switch the LED on
   //write_GP10(GP10_FOOT_VOL, 100); // Switching guitars does not work - the wrong values are read from the GP-10. ?????
   write_GP10(GP10_COSM_GUITAR_SW, GP10_COSM_onoff); // Switch COSM guitar on
   write_GP10(GP10_NORMAL_PU_SW, GP10_nrml_pu_onoff); // Switch normal pu on
 }
 
-void GP10_off() {
+void GP10_mute() {
   if (GP10_always_on == false) {
-    GP10_ON_LED = GP10_OFF_COLOUR; //Switch the LED off
+    GP10_select_LED = GP10_OFF_COLOUR; //Switch the LED off
     //write_GP10(GP10_FOOT_VOL, 0);
     write_GP10(GP10_COSM_GUITAR_SW, 0x00); // Switch COSM guitar off
     write_GP10(GP10_NORMAL_PU_SW, 0x00); // Switch normal pu off

@@ -40,7 +40,7 @@ void start_global_tuner() {
   global_tuner_LED = GLOBAL_STOMP_COLOUR_ON;
   write_GP10(GP10_TUNER_ON); // Start tuner on GP-10
   write_VG99(VG99_TUNER_ON); // Start tuner on VG-99
-  GR55_off(); //Mute the GR55
+  GR55_mute(); //Mute the GR55
 }
 
 void stop_global_tuner() {
@@ -50,7 +50,7 @@ void stop_global_tuner() {
 
   write_GP10(GP10_TUNER_OFF); // Stop tuner on GP-10
   write_VG99(VG99_TUNER_OFF); // Start tuner on VG-99
-  GR55_on(); //Unmute the GR55
+  GR55_unmute(); //Unmute the GR55
 
 }
 

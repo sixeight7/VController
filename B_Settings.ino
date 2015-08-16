@@ -87,17 +87,17 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 2 - make sure you connect both the stomp and the LED!
-#define STOMP_SWITCH2_1_PRESS VG99_on_switch()
+#define STOMP_SWITCH2_1_PRESS VG99_select_switch()
 #define STOMP_SWITCH2_1_RELEASE nothing() 
-#define STOMP_SWITCH2_1_LED VG99_ON_LED
+#define STOMP_SWITCH2_1_LED VG99_select_LED
 
-#define STOMP_SWITCH2_2_PRESS GR55_on_switch()
+#define STOMP_SWITCH2_2_PRESS GR55_select_switch()
 #define STOMP_SWITCH2_2_RELEASE nothing() 
-#define STOMP_SWITCH2_2_LED GR55_ON_LED
+#define STOMP_SWITCH2_2_LED GR55_select_LED
 
-#define STOMP_SWITCH2_3_PRESS GP10_on_switch()
+#define STOMP_SWITCH2_3_PRESS GP10_select_switch()
 #define STOMP_SWITCH2_3_RELEASE nothing() 
-#define STOMP_SWITCH2_3_LED GP10_ON_LED
+#define STOMP_SWITCH2_3_LED GP10_select_LED
 
 #define STOMP_SWITCH2_4_PRESS nothing()
 #define STOMP_SWITCH2_4_RELEASE nothing() 

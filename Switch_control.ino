@@ -91,7 +91,7 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
           switchcheck_MODE_VG99_DIRECTSELECT2();
           break;
         case MODE_COLOUR_MAKER:
-        switchcheck_MODE_COLOUR_MAKER();
+          switchcheck_MODE_COLOUR_MAKER();
           break;
         default:
           select_mode(MODE_STOMP_2);
@@ -115,7 +115,7 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
     //show_status_message("you released " + String(switch_released));
     update_LEDS = true;
     update_lcd = true;
-    
+
     if (mode == MODE_STOMP_1) switchcheck_MODE_STOMPbox_release(1);
     if (mode == MODE_STOMP_2) switchcheck_MODE_STOMPbox_release(2);
     if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_release(3);
@@ -168,7 +168,7 @@ void switchcheck_MODE_STOMPbox(uint8_t page)
   if ((page == 2) && (switch_pressed == 7)) STOMP_SWITCH2_7_PRESS;
   if ((page == 2) && (switch_pressed == 8)) STOMP_SWITCH2_8_PRESS;
   if ((page == 2) && (switch_pressed == 9)) STOMP_SWITCH2_9_PRESS;
-  
+
   if ((page == 3) && (switch_pressed == 1)) STOMP_SWITCH3_1_PRESS;
   if ((page == 3) && (switch_pressed == 2)) STOMP_SWITCH3_2_PRESS;
   if ((page == 3) && (switch_pressed == 3)) STOMP_SWITCH3_3_PRESS;
@@ -202,7 +202,7 @@ void switchcheck_MODE_STOMPbox_release(uint8_t page)
   if ((page == 2) && (switch_released == 7)) STOMP_SWITCH2_7_RELEASE;
   if ((page == 2) && (switch_released == 8)) STOMP_SWITCH2_8_RELEASE;
   if ((page == 2) && (switch_released == 9)) STOMP_SWITCH2_9_RELEASE;
-  
+
   if ((page == 3) && (switch_released == 1)) STOMP_SWITCH3_1_RELEASE;
   if ((page == 3) && (switch_released == 2)) STOMP_SWITCH3_2_RELEASE;
   if ((page == 3) && (switch_released == 3)) STOMP_SWITCH3_3_RELEASE;
@@ -219,8 +219,8 @@ void switchcheck_MODE_GP10_PATCH()
 {
   if (switch_pressed < 10) {
     if (GP10_bank_selection_active == false) GP10_bank_number = (GP10_patch_number / 10); //Reset the bank to current patch
-    GP10_patch_number = (GP10_bank_number) * 10 + (switch_pressed - 1);
-    GP10_SendProgramChange(GP10_patch_number);
+    uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed - 1);
+    GP10_SendProgramChange(new_patch);
     GP10_bank_selection_active = false;
   }
 }
@@ -241,9 +241,9 @@ void switchcheck_MODE_GP10_DIRECTSELECT2()
 {
   if (switch_pressed <= 10) {
     select_mode(MODE_GP10_PATCH);
-    GP10_patch_number = (GP10_bank_number) * 10 + (switch_pressed % 10) - 1; // switch_pressed % 10 makes buton 10 zero
+    uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed % 10) - 1; // switch_pressed % 10 makes buton 10 zero
     switch10_used = true;
-    GP10_SendProgramChange(GP10_patch_number);
+    GP10_SendProgramChange(new_patch);
   }
 
 }
@@ -253,8 +253,8 @@ void switchcheck_MODE_GR55_PATCH()
 {
   if (switch_pressed < 10) {
     if (GR55_bank_selection_active == false) GR55_bank_number = ((GR55_patch_number / 9) * 3); // Reset the bank to current patch - bank needs update, so the VController never jumps to other banks
-    GR55_patch_number = (GR55_bank_number * 3) + (switch_pressed - 1);
-    GR55_SendProgramChange();
+    uint8_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 1);
+    GR55_SendProgramChange(new_patch);
     GR55_bank_selection_active = false;
   }
 }
@@ -283,8 +283,8 @@ void switchcheck_MODE_GR55_DIRECTSELECT2()
 void switchcheck_MODE_GR55_DIRECTSELECT3()
 {
   if (switch_pressed < 10) {
-    GR55_patch_number = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
-    GR55_SendProgramChange();
+    uint8_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
+    GR55_SendProgramChange(new_patch);
     select_mode(MODE_GR55_PATCH);
   }
 }
@@ -294,8 +294,8 @@ void switchcheck_MODE_VG99_PATCH()
 {
   if (switch_pressed < 10) {
     if (VG99_bank_selection_active == false) VG99_bank_number = (VG99_patch_number / 10); //Reset the bank to current patch
-    VG99_patch_number = (VG99_bank_number) * 10 + (switch_pressed - 1);
-    VG99_SendPatchChange();
+    uint8_t new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
+    VG99_SendPatchChange(new_patch);
     VG99_bank_selection_active = false;
   }
 }
@@ -320,18 +320,19 @@ void switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed()  //Long pressing a numbe
 }
 
 // Mode 11: VG99 direct select mode 2
-void switchcheck_MODE_VG99_DIRECTSELECT2()
-{
+void switchcheck_MODE_VG99_DIRECTSELECT2() {
+  uint8_t new_patch;
+
   if (switch_pressed < 10) {
     select_mode(MODE_VG99_PATCH);
-    VG99_patch_number = (VG99_bank_number) * 10 + (switch_pressed - 1);
-    VG99_SendPatchChange();
+    new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
+    VG99_SendPatchChange(new_patch);
   }
   if (switch_pressed == 10) {
     select_mode(MODE_VG99_PATCH);
-    VG99_patch_number = (VG99_bank_number) * 10 - 1;
+    new_patch = (VG99_bank_number) * 10 - 1;
     VG99_bank_number = VG99_bank_number - 1;
-    VG99_SendPatchChange();
+    VG99_SendPatchChange(new_patch);
     switch10_used = true;
   }
 }

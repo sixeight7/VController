@@ -91,7 +91,7 @@ void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlengt
       update_lcd = true;
     }
     
-    VG99_check_onoff_states(sxdata, sxlength);
+    VG99_check_guitar_switch_states(sxdata, sxlength);
     read_FC300_CTL_assigns(sxdata, sxlength);
   }
 
@@ -145,11 +145,11 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
 void check_PC_in_VG99(byte channel, byte program) {
   // Check the source by checking the channel
   if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
-    /*if (VG99_patch_number != (VG99_CC01 * 100) + program) {
+    if (VG99_patch_number != (VG99_CC01 * 100) + program) {
       VG99_patch_number = (VG99_CC01 * 100) + program;
       VG99_do_after_patch_selection();
       Serial.println("Receive PC (VG99):" + String(VG99_patch_number));
-    }*/
+    }
     //}
   }
 }
@@ -247,26 +247,37 @@ void VG99_request_name()
   request_VG99(VG99_REQUEST_PATCHNAME);
 }
 
-
-void VG99_SendPatchChange() {
-  /*
-  MIDI1.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00 - VG99 counts PC up to 100, not 128!
-  MIDI1.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
-  MIDI2.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00 - VG99 counts PC up to 100, not 128!
-  MIDI2.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
-  usbMIDI.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel);
-  usbMIDI.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
-  */
+void VG99_SendPatchChange(uint8_t new_patch) {
+  if (new_patch == VG99_patch_number) VG99_unmute();
+  VG99_patch_number = new_patch;
   Serial.println("Send Patch Change (VG99):" + String(VG99_patch_number));
+  /*if (VG99_MIDI_port == USBMIDI_PORT) {
+    usbMIDI.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
+    usbMIDI.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+  }
+  if (VG99_MIDI_port == MIDI1_PORT) {
+    MIDI1.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI1.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+  }
+  if (VG99_MIDI_port == MIDI2_PORT) {
+    MIDI2.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI2.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+  }
+  if (VG99_MIDI_port == MIDI3_PORT) {
+    MIDI3.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI3.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+  }*/
   write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
   VG99_do_after_patch_selection();
 }
 
 void VG99_do_after_patch_selection() {
-  VG99_request_guitar_onoff_state();
+  GP10_mute();
+  GR55_mute();
+  VG99_request_guitar_switch_states();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) VG99_send_bpm();
   if (VG99_FC300_mode == false) VG99_request_name();
-  //Request_FC300_CTL_first_assign(); - will start after VG99_request-guitar_onoff_state is done - they often ask for the same info.
+  Request_FC300_CTL_first_assign(); // will start after VG99_request-guitar_onoff_state is done - they often ask for the same info.
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_VG99_PATCH_MSB, (VG99_patch_number / 256));
@@ -298,17 +309,19 @@ void VG99_VLINK_LED_OFF() {
 }
 // ********************************* Section 4: VG99 controller functions ***********************************************
 
-// Switching the VG99 on and off is done by storing the settings of COSM guitar on/off and Normal PU on/off
-// and switching both off when guitar is off and back to original state when switched back on
+// ** US-20 simulation
+// Selecting and muting the VG99 is done by storing the settings of COSM guitar A switch and COSM guitar B switch
+// and switching both off when guitar is muted and back to original state when the VG99 is selected
 
-void VG99_request_guitar_onoff_state() {
-  VG99_ON_LED = VG99_PATCH_COLOUR; //Switch the LED on
+
+void VG99_request_guitar_switch_states() {
+  VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
   request_VG99(VG99_COSM_GUITAR_A_SW, 1);
   request_VG99(VG99_COSM_GUITAR_B_SW, 1);
   VG99_request_onoff = true;
 }
 
-void VG99_check_onoff_states(const unsigned char* sxdata, short unsigned int sxlength) {
+void VG99_check_guitar_switch_states(const unsigned char* sxdata, short unsigned int sxlength) {
   if (VG99_request_onoff == true) {
     uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
     if (address == VG99_COSM_GUITAR_A_SW) {
@@ -323,29 +336,29 @@ void VG99_check_onoff_states(const unsigned char* sxdata, short unsigned int sxl
   }
 }
 
-void VG99_on_switch() {
-  if (VG99_ON_LED == VG99_PATCH_COLOUR) {
+void VG99_select_switch() {
+  if (VG99_select_LED == VG99_PATCH_COLOUR) {
     VG99_always_on = !VG99_always_on; // Toggle VG99_always_on
     if (VG99_always_on) show_status_message("VG99 always ON");
-    else show_status_message("VG99 can be OFF");
+    else show_status_message("VG99 can be muted");
   }
   else {
-    VG99_on();
+    VG99_unmute();
     show_status_message(VG99_patch_name); // Show the correct patch name
   }
-  GP10_off();
-  GR55_off();
+  GP10_mute();
+  GR55_mute();
 }
 
-void VG99_on() {
-  VG99_ON_LED = VG99_PATCH_COLOUR; //Switch the LED on
+void VG99_unmute() {
+  VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
   write_VG99(VG99_COSM_GUITAR_A_SW, VG99_COSM_A_onoff); // Switch COSM guitar on
   write_VG99(VG99_COSM_GUITAR_B_SW, VG99_COSM_B_onoff); // Switch normal pu on
 }
 
-void VG99_off() {
+void VG99_mute() {
   if (VG99_always_on == false) {
-    VG99_ON_LED = VG99_OFF_COLOUR; //Switch the LED off
+    VG99_select_LED = VG99_OFF_COLOUR; //Switch the LED off
     write_VG99(VG99_COSM_GUITAR_A_SW, 0x00); // Switch COSM guitar off
     write_VG99(VG99_COSM_GUITAR_B_SW, 0x00); // Switch normal pu off
   }
