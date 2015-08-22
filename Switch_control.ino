@@ -126,11 +126,10 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
     update_LEDS = true;
     update_lcd = true;
 
-    switch (mode) {
-      case MODE_VG99_DIRECTSELECT2:
-        switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed();
-        break;
-    }
+    if (mode == MODE_VG99_DIRECTSELECT2) switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed();
+    if (mode == MODE_STOMP_1) switchcheck_MODE_STOMPbox_long_press(1);
+    if (mode == MODE_STOMP_2) switchcheck_MODE_STOMPbox_long_press(2);
+    if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_long_press(3);    
 
     if (switch_long_pressed == 10) SWITCH10_LONG_FUNC;
     if (switch_long_pressed == 11) SWITCH11_LONG_FUNC;
@@ -178,6 +177,40 @@ void switchcheck_MODE_STOMPbox(uint8_t page)
   if ((page == 3) && (switch_pressed == 7)) STOMP_SWITCH3_7_PRESS;
   if ((page == 3) && (switch_pressed == 8)) STOMP_SWITCH3_8_PRESS;
   if ((page == 3) && (switch_pressed == 9)) STOMP_SWITCH3_9_PRESS;
+}
+
+void switchcheck_MODE_STOMPbox_long_press(uint8_t page)
+{
+  // OK, very crude, but because I use defines, there is just no other way to do this.
+  if ((page == 1) && (switch_long_pressed == 1)) STOMP_SWITCH1_1_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 2)) STOMP_SWITCH1_2_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 3)) STOMP_SWITCH1_3_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 4)) STOMP_SWITCH1_4_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 5)) STOMP_SWITCH1_5_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 6)) STOMP_SWITCH1_6_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 7)) STOMP_SWITCH1_7_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 8)) STOMP_SWITCH1_8_LONG_PRESS;
+  if ((page == 1) && (switch_long_pressed == 9)) STOMP_SWITCH1_9_LONG_PRESS;
+
+  if ((page == 2) && (switch_long_pressed == 1)) STOMP_SWITCH2_1_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 2)) STOMP_SWITCH2_2_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 3)) STOMP_SWITCH2_3_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 4)) STOMP_SWITCH2_4_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 5)) STOMP_SWITCH2_5_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 6)) STOMP_SWITCH2_6_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 7)) STOMP_SWITCH2_7_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 8)) STOMP_SWITCH2_8_LONG_PRESS;
+  if ((page == 2) && (switch_long_pressed == 9)) STOMP_SWITCH2_9_LONG_PRESS;
+
+  if ((page == 3) && (switch_long_pressed == 1)) STOMP_SWITCH3_1_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 2)) STOMP_SWITCH3_2_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 3)) STOMP_SWITCH3_3_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 4)) STOMP_SWITCH3_4_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 5)) STOMP_SWITCH3_5_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 6)) STOMP_SWITCH3_6_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 7)) STOMP_SWITCH3_7_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 8)) STOMP_SWITCH3_8_LONG_PRESS;
+  if ((page == 3) && (switch_long_pressed == 9)) STOMP_SWITCH3_9_LONG_PRESS;
 }
 
 void switchcheck_MODE_STOMPbox_release(uint8_t page)

@@ -34,19 +34,17 @@ void nothing() { // A dummy function that besically does nothing
 // Call start_global_tuner()
 
 void start_global_tuner() {
-
+  // LED control of global tuner is done directly in the LED section
   previous_mode = mode; // Remember the mode we came from
   mode = MODE_TUNER;
-  global_tuner_LED = GLOBAL_STOMP_COLOUR_ON;
   write_GP10(GP10_TUNER_ON); // Start tuner on GP-10
   write_VG99(VG99_TUNER_ON); // Start tuner on VG-99
-  GR55_mute(); //Mute the GR55
+  GR55_mute_now(); //Mute the GR55
 }
 
 void stop_global_tuner() {
 
   mode = previous_mode; // Return to previous mode
-  global_tuner_LED = GLOBAL_STOMP_COLOUR_OFF;
 
   write_GP10(GP10_TUNER_OFF); // Stop tuner on GP-10
   write_VG99(VG99_TUNER_OFF); // Start tuner on VG-99
@@ -215,12 +213,12 @@ void update_tap_tempo_LED() {
     // If LED is currently on
     if (global_tap_tempo_LED == BPM_COLOUR_ON) {
       global_tap_tempo_LED = BPM_COLOUR_OFF;  // Turn the LED off
-      //VG99_VLINK_LED_OFF();
+      VG99_TAP_TEMPO_LED_OFF();
       bpm_LED_timer_length = (60000 / bpm) - BPM_LED_ON_TIME - BPM_LED_ADJUST; // Set the time for the timer
     }
     else {
       global_tap_tempo_LED = BPM_COLOUR_ON;   // Turn the LED on
-      //VG99_VLINK_LED_ON();
+      VG99_TAP_TEMPO_LED_ON();
       bpm_LED_timer_length = BPM_LED_ON_TIME; // Set the time for the timer
     }
     update_LEDS = true;
@@ -230,6 +228,6 @@ void update_tap_tempo_LED() {
 void reset_tap_tempo_LED() {
   bpm_LED_timer = millis();
   global_tap_tempo_LED = BPM_COLOUR_ON;    // Turn the LED on
-  //VG99_VLINK_LED_ON();
+  //VG99_TAP_TEMPO_LED_ON();
   bpm_LED_timer_length = BPM_LED_ON_TIME;  // Set the time for the timer
 }

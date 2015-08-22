@@ -41,7 +41,6 @@ uint8_t GR55_synth2_onoff = 0;
 uint8_t GR55_COSM_onoff = 0;
 uint8_t GR55_nrml_pu_onoff = 0;
 bool GR55_request_onoff = false;
-bool GR55_always_on = false;
 
 // ********************************* Section 2: G%55 comon MIDI in functions ********************************************
 
@@ -140,7 +139,7 @@ void request_GR55(uint32_t address, uint8_t no_of_bytes)
 void GR55_SendProgramChange(uint8_t new_patch) {
   if (new_patch == GR55_patch_number) GR55_unmute();
   GR55_patch_number = new_patch;
-  
+
   uint16_t GR55_patch_send = 0; // Temporary value
   if (GR55_patch_number > 296) {
     GR55_patch_send = GR55_patch_number + 1751; // There is a gap of 1752 patches in the numbering system of the GR-55. This will recreate it.
@@ -217,7 +216,7 @@ void GR55_toggle_CTL_LED()
 
 // ********************************* Section 4: GR55 stompbox functions ********************************************
 
-// ** US-20 simulation 
+// ** US-20 simulation
 // Selecting and muting the GR55 is done by storing the settings of Synth 1 and 2 and COSM guitar switch and Normal PU switch
 // and switching both off when guitar is muted and back to original state when the GR55 is selected
 
@@ -257,16 +256,26 @@ void GR55_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 
 void GR55_select_switch() {
   if (GR55_select_LED == GR55_PATCH_COLOUR) {
-    GR55_always_on = !GR55_always_on; // Toggle GR55_always_on
-    if (GR55_always_on) show_status_message("GR55 always ON");
-    else show_status_message("GR55 can be muted");
+    GR55_always_on_toggle();
   }
   else {
     GR55_unmute();
+    GP10_mute();
+    VG99_mute();
     show_status_message(GR55_patch_name); // Show the correct patch name
   }
-  GP10_mute();
-  VG99_mute();
+}
+
+void GR55_always_on_toggle() {
+  GR55_always_on = !GR55_always_on; // Toggle GR55_always_on
+  if (GR55_always_on) {
+    GR55_unmute();
+    show_status_message("GR55 always ON");
+  }
+  else {
+    GR55_mute();
+    show_status_message("GR55 can be muted");
+  }
 }
 
 void GR55_unmute() {
@@ -279,10 +288,14 @@ void GR55_unmute() {
 
 void GR55_mute() {
   if (GR55_always_on == false) {
-    GR55_select_LED = GR55_OFF_COLOUR; //Switch the LED off
-    write_GR55(GR55_SYNTH1_SW, 0x01); // Switch synth 1 off
-    write_GR55(GR55_SYNTH2_SW, 0x01); // Switch synth 1 off
-    write_GR55(GR55_COSM_GUITAR_SW, 0x01); // Switch COSM guitar off
-    write_GR55(GR55_NORMAL_PU_SW, 0x01); // Switch normal pu off
+    GR55_mute_now();
   }
+}
+
+void GR55_mute_now() { // Needed a second version, because the GR55 must always mute when engaging global tuner.
+  GR55_select_LED = GR55_OFF_COLOUR; //Switch the LED off
+  write_GR55(GR55_SYNTH1_SW, 0x01); // Switch synth 1 off
+  write_GR55(GR55_SYNTH2_SW, 0x01); // Switch synth 1 off
+  write_GR55(GR55_COSM_GUITAR_SW, 0x01); // Switch COSM guitar off
+  write_GR55(GR55_NORMAL_PU_SW, 0x01); // Switch normal pu off
 }

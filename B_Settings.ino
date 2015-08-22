@@ -51,112 +51,139 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 
 //***** Set functionality of the 9 buttons in stompbox mode 1 - make sure you connect both the stomp and the LED!
 #define STOMP_SWITCH1_1_PRESS GP10_stomp(0)
+#define STOMP_SWITCH1_1_LONG_PRESS nothing()
 #define STOMP_SWITCH1_1_RELEASE nothing() 
 #define STOMP_SWITCH1_1_LED GP10_stomps[0].LED
 
 #define STOMP_SWITCH1_2_PRESS GP10_stomp(1)
+#define STOMP_SWITCH1_2_LONG_PRESS nothing()
 #define STOMP_SWITCH1_2_RELEASE nothing() 
 #define STOMP_SWITCH1_2_LED GP10_stomps[1].LED
 
 #define STOMP_SWITCH1_3_PRESS GP10_stomp(2)
+#define STOMP_SWITCH1_3_LONG_PRESS nothing()
 #define STOMP_SWITCH1_3_RELEASE nothing() 
 #define STOMP_SWITCH1_3_LED GP10_stomps[2].LED
 
 #define STOMP_SWITCH1_4_PRESS GP10_stomp(3)
+#define STOMP_SWITCH1_4_LONG_PRESS nothing()
 #define STOMP_SWITCH1_4_RELEASE nothing() 
 #define STOMP_SWITCH1_4_LED GP10_stomps[3].LED
 
 #define STOMP_SWITCH1_5_PRESS GP10_stomp(4)
+#define STOMP_SWITCH1_5_LONG_PRESS nothing()
 #define STOMP_SWITCH1_5_RELEASE nothing() 
 #define STOMP_SWITCH1_5_LED GP10_stomps[4].LED
 
 #define STOMP_SWITCH1_6_PRESS GP10_stomp(5)
+#define STOMP_SWITCH1_6_LONG_PRESS nothing()
 #define STOMP_SWITCH1_6_RELEASE nothing() 
 #define STOMP_SWITCH1_6_LED GP10_stomps[5].LED
 
 #define STOMP_SWITCH1_7_PRESS nothing()
+#define STOMP_SWITCH1_7_LONG_PRESS nothing()
 #define STOMP_SWITCH1_7_RELEASE nothing() 
 #define STOMP_SWITCH1_7_LED LEDoff
 
-#define STOMP_SWITCH1_8_PRESS start_global_tuner()
+#define STOMP_SWITCH1_8_PRESS nothing()
+#define STOMP_SWITCH1_8_LONG_PRESS nothing()
 #define STOMP_SWITCH1_8_RELEASE nothing() 
-#define STOMP_SWITCH1_8_LED global_tuner_LED
+#define STOMP_SWITCH1_8_LED LEDoff
 
 #define STOMP_SWITCH1_9_PRESS global_tap_tempo()
-#define STOMP_SWITCH1_9_RELEASE nothing() 
+#define STOMP_SWITCH1_9_LONG_PRESS start_global_tuner()
+#define STOMP_SWITCH1_9_RELEASE nothing()
 #define STOMP_SWITCH1_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 2 - make sure you connect both the stomp and the LED!
 #define STOMP_SWITCH2_1_PRESS VG99_select_switch()
+#define STOMP_SWITCH2_1_LONG_PRESS VG99_always_on_toggle()
 #define STOMP_SWITCH2_1_RELEASE nothing() 
 #define STOMP_SWITCH2_1_LED VG99_select_LED
 
 #define STOMP_SWITCH2_2_PRESS GR55_select_switch()
+#define STOMP_SWITCH2_2_LONG_PRESS GR55_always_on_toggle()
 #define STOMP_SWITCH2_2_RELEASE nothing() 
 #define STOMP_SWITCH2_2_LED GR55_select_LED
 
 #define STOMP_SWITCH2_3_PRESS GP10_select_switch()
+#define STOMP_SWITCH2_3_LONG_PRESS GP10_always_on_toggle()
 #define STOMP_SWITCH2_3_RELEASE nothing() 
 #define STOMP_SWITCH2_3_LED GP10_select_LED
 
 #define STOMP_SWITCH2_4_PRESS nothing()
+#define STOMP_SWITCH2_4_LONG_PRESS nothing()
 #define STOMP_SWITCH2_4_RELEASE nothing() 
 #define STOMP_SWITCH2_4_LED LEDoff
 
 #define STOMP_SWITCH2_5_PRESS nothing()
+#define STOMP_SWITCH2_5_LONG_PRESS nothing()
 #define STOMP_SWITCH2_5_RELEASE nothing() 
 #define STOMP_SWITCH2_5_LED LEDoff
 
 #define STOMP_SWITCH2_6_PRESS nothing()
+#define STOMP_SWITCH2_6_LONG_PRESS nothing()
 #define STOMP_SWITCH2_6_RELEASE nothing() 
 #define STOMP_SWITCH2_6_LED LEDoff
 
 #define STOMP_SWITCH2_7_PRESS nothing()
+#define STOMP_SWITCH2_7_LONG_PRESS nothing()
 #define STOMP_SWITCH2_7_RELEASE nothing() 
 #define STOMP_SWITCH2_7_LED LEDoff
 
-#define STOMP_SWITCH2_8_PRESS start_global_tuner()
+#define STOMP_SWITCH2_8_PRESS nothing()
+#define STOMP_SWITCH2_8_LONG_PRESS nothing()
 #define STOMP_SWITCH2_8_RELEASE nothing() 
-#define STOMP_SWITCH2_8_LED global_tuner_LED
+#define STOMP_SWITCH2_8_LED LEDoff
 
 #define STOMP_SWITCH2_9_PRESS global_tap_tempo()
+#define STOMP_SWITCH2_9_LONG_PRESS start_global_tuner()
 #define STOMP_SWITCH2_9_RELEASE nothing() 
 #define STOMP_SWITCH2_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 3 - make sure you connect both the stomp and the LED!
 #define STOMP_SWITCH3_1_PRESS FC300_stomp_press(0)
+#define STOMP_SWITCH3_1_LONG_PRESS nothing()
 #define STOMP_SWITCH3_1_RELEASE FC300_stomp_release(0)
 #define STOMP_SWITCH3_1_LED FC300_ctls[0].LED
 
 #define STOMP_SWITCH3_2_PRESS FC300_stomp_press(1)
+#define STOMP_SWITCH3_2_LONG_PRESS nothing()
 #define STOMP_SWITCH3_2_RELEASE FC300_stomp_release(1)
 #define STOMP_SWITCH3_2_LED FC300_ctls[1].LED
 
 #define STOMP_SWITCH3_3_PRESS FC300_stomp_press(2)
+#define STOMP_SWITCH3_3_LONG_PRESS nothing()
 #define STOMP_SWITCH3_3_RELEASE FC300_stomp_release(2)
 #define STOMP_SWITCH3_3_LED FC300_ctls[2].LED
 
 #define STOMP_SWITCH3_4_PRESS FC300_stomp_press(3)
+#define STOMP_SWITCH3_4_LONG_PRESS nothing()
 #define STOMP_SWITCH3_4_RELEASE FC300_stomp_release(3)
 #define STOMP_SWITCH3_4_LED FC300_ctls[3].LED
 
 #define STOMP_SWITCH3_5_PRESS FC300_stomp_press(4)
+#define STOMP_SWITCH3_5_LONG_PRESS nothing()
 #define STOMP_SWITCH3_5_RELEASE FC300_stomp_release(4)
 #define STOMP_SWITCH3_5_LED FC300_ctls[4].LED
 
 #define STOMP_SWITCH3_6_PRESS FC300_stomp_press(5)
+#define STOMP_SWITCH3_6_LONG_PRESS nothing()
 #define STOMP_SWITCH3_6_RELEASE FC300_stomp_release(5)
 #define STOMP_SWITCH3_6_LED FC300_ctls[5].LED
 
 #define STOMP_SWITCH3_7_PRESS FC300_stomp_press(6)
+#define STOMP_SWITCH3_7_LONG_PRESS nothing()
 #define STOMP_SWITCH3_7_RELEASE FC300_stomp_release(6)
 #define STOMP_SWITCH3_7_LED FC300_ctls[6].LED
 
 #define STOMP_SWITCH3_8_PRESS FC300_stomp_press(7)
+#define STOMP_SWITCH3_8_LONG_PRESS nothing()
 #define STOMP_SWITCH3_8_RELEASE FC300_stomp_release(7)
 #define STOMP_SWITCH3_8_LED FC300_ctls[7].LED
 
 #define STOMP_SWITCH3_9_PRESS global_tap_tempo()
+#define STOMP_SWITCH3_9_LONG_PRESS start_global_tuner()
 #define STOMP_SWITCH3_9_RELEASE nothing()
 #define STOMP_SWITCH3_9_LED global_tap_tempo_LED
 
@@ -216,6 +243,7 @@ uint8_t GP10_patch_number = 0;
 uint8_t GP10_bank_number = 0;
 boolean GP10_detected = false;
 boolean GP10_bank_selection_active = false;
+bool GP10_always_on = false;
 
 String GR55_patch_name = "                ";
 uint16_t GR55_patch_number = 0;
@@ -224,6 +252,7 @@ uint16_t GR55_bank_number = 1;
 uint8_t GR55_CC01 = 0;    // the MIDI CC #01 sent by the GR-55
 boolean GR55_detected = false;
 boolean GR55_bank_selection_active = false;
+bool GR55_always_on = false;
 
 String VG99_patch_name = "                ";
 uint16_t VG99_patch_number = 0;
@@ -232,6 +261,7 @@ uint8_t VG99_bank_number = 0;
 uint8_t VG99_CC01 = 0;    // the MIDI CC #01 sent by the GR-55
 boolean VG99_detected = false;
 boolean VG99_bank_selection_active = false;
+bool VG99_always_on = false;
 
 boolean FC300_detected = false;
 

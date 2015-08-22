@@ -154,10 +154,10 @@ void main_LED_control()
     switch (mode) {
       case MODE_TUNER:
         turn_all_LEDs_off();
-        // Check if we came from stompbox mode and if there was a LED set to global tuner
+        // Check if we came from stompbox mode and if there was a LED set to global tap tempo
         if (previous_mode >= 20) {
           for (uint8_t i = 0; i < 9; i++) {
-            if (LEDs_stomp_mode_ptr[previous_mode - 20][i] == &global_tuner_LED) show_colour(i, GLOBAL_STOMP_COLOUR_ON); // If so switch it on
+            if (LEDs_stomp_mode_ptr[previous_mode - 20][i] == &global_tap_tempo_LED) show_colour(i, GLOBAL_STOMP_COLOUR_ON); // If so switch it on
           }
         }
         LEDs.show();

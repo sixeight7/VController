@@ -46,7 +46,6 @@
 uint8_t GP10_COSM_onoff = 0;
 uint8_t GP10_nrml_pu_onoff = 0;
 bool GP10_request_onoff = false;
-bool GP10_always_on = false;
 
 uint8_t GP10_MIDI_port = 0; // What port is the GP10 connected to (0 - 3)
 
@@ -157,7 +156,7 @@ uint8_t GP10_previous_patch_number = 0;
 uint8_t GP10_patch_memory = 0;
 
 void GP10_SendProgramChange(uint8_t new_patch) {
-  
+
   if (new_patch == GP10_patch_number) GP10_unmute();
   GP10_patch_number = new_patch;
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendProgramChange(new_patch, GP10_MIDI_channel);
@@ -196,7 +195,7 @@ void GP10_send_bpm() {
 
 // ********************************* Section 4: GP10 stompbox functions ********************************************
 
-// ** US-20 simulation 
+// ** US-20 simulation
 // Selecting and muting the GP10 is done by storing the settings of COSM guitar switch and Normal PU switch
 // and switching both off when guitar is muted and back to original state when the GP10 is selected
 
@@ -223,16 +222,26 @@ void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 
 void GP10_select_switch() {
   if (GP10_select_LED == GP10_PATCH_COLOUR) {
-    GP10_always_on = !GP10_always_on; // Toggle GP10_always_on
-    if (GP10_always_on) show_status_message("GP10 always ON");
-    else show_status_message("GP10 can be muted");
+    GP10_always_on_toggle();
   }
   else {
     GP10_unmute();
+    GR55_mute();
+    VG99_mute();
     show_status_message(GP10_patch_name); // Show the correct patch name
   }
-  GR55_mute();
-  VG99_mute();
+}
+
+void GP10_always_on_toggle() {
+  GP10_always_on = !GP10_always_on; // Toggle GP10_always_on
+  if (GP10_always_on) {
+    GP10_unmute();
+    show_status_message("GP10 always ON");
+  }
+  else {
+    GP10_mute();
+    show_status_message("GP10 can be muted");
+  }
 }
 
 void GP10_unmute() {
@@ -369,7 +378,7 @@ void GP10_stomp(uint8_t number) {
 // Finds the right colour for an FX LED that is on
 uint8_t GP10_stomp_LED_on_colour(uint8_t number) {
   if (GP10_stomps[number].colour_on == GP10_FX_COLOUR_ON) { // Check if we have to pick the colour from the GP10_FX_colours table
-    return GP10_FX_colours[GP10_stomps[number].type][0];  
+    return GP10_FX_colours[GP10_stomps[number].type][0];
   }
   else {
     return GP10_stomps[number].colour_on; // Switch the LED on with the normal GP10 stomp colour
@@ -379,7 +388,7 @@ uint8_t GP10_stomp_LED_on_colour(uint8_t number) {
 // Finds the right colour for an FX LED that is off
 uint8_t GP10_stomp_LED_off_colour(uint8_t number) {
   if (GP10_stomps[number].colour_off == GP10_FX_COLOUR_OFF) { // Check if we have to pick the colour from the GP10_FX_colours table
-    return GP10_FX_colours[GP10_stomps[number].type][1];  
+    return GP10_FX_colours[GP10_stomps[number].type][1];
   }
   else {
     return GP10_stomps[number].colour_off; // Switch the LED on with the normal GP10 stomp colour

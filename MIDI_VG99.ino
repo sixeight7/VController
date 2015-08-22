@@ -24,8 +24,8 @@
 
 // Note: when connecting the VG-99 to the RRC connector make sure that you make the following settings:
 // 1) Go to SYSTEM / MIDI / PAGE 4 on the VG99
-// 2) Switch of RRC -> main (F1)
-// 3) Switch on RRC <- main (F2) (F3 can be off)
+// 2) Switch on RRC -> main (F1)
+// 3) Switch off RRC <- main (F2 and F3)
 // The reason is that the VG99 sends back patch changes to the VController, which make the system unresponsive.
 // I cannot trace this back to the source, but it may be a firmware error on the VG-99.
 
@@ -41,7 +41,8 @@ boolean VG99_FC300_mode = false; // If the FC300 is attached, patch names will b
 #define VG99_EDITOR_MODE_OFF 0x70000100, 0x00
 #define VG99_TUNER_ON 0x70000000, 0x01 // Changes the running mode to tuner / multi-mode
 #define VG99_TUNER_OFF 0x70000000, 0x00 // Changes the running mode to play
-#define VG99_VLINK_LED_CC 80 //Make an assign on the VG99: Source CC #80, target KEY/BPM?AMPCTL - V_LINK SW on every patch and you will have a flashing LED. Set to zero and VController will send no CC message
+#define VG99_TAP_TEMPO_LED_CC 80 // If you have the D-beam switched off on the VG99, make an assign on the VG99: Source CC #80, momentary, target D BEAM - SELECT - Assignable / off on every patch and you will have a flashing LED. 
+                                 // Set to zero and VController will send no CC message. You can also set the cc on the VG99 to V-link sw, but that generates a lot of midi data.
 
 #define VG99_PATCH_CHANGE 0x71000000 //00 00 Patch 001 and 03 0F Patch 400
 #define VG99_TEMPO 0x60000015  // Accepts values from 40 bpm - 250 bpm
@@ -52,14 +53,13 @@ boolean VG99_FC300_mode = false; // If the FC300 is attached, patch names will b
 uint8_t VG99_COSM_A_onoff = 0;
 uint8_t VG99_COSM_B_onoff = 0;
 bool VG99_request_onoff = false;
-bool VG99_always_on = false;
 
 //Sysex messages for FC300 in sysex mode:
 //I am trying to fool the VG-99 to believe there is an FC300 attached, but it does not work.
 #define FC300_TUNER_ON 0x1002, 0x01 // Does not work for some reason
 #define FC300_TUNER_OFF 0x1002, 0x00
 #define FC300_SYSEX_MODE 0x1000, 0x01 //Tell the VG-99 we are in sysex mode
-
+#define FC300_NORMAL_MODE 0x1000, 0x00
 
 uint8_t VG99_MIDI_port = 0;
 
@@ -90,8 +90,8 @@ void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlengt
       }
       update_lcd = true;
     }
-    
-    VG99_check_guitar_switch_states(sxdata, sxlength);
+
+    //VG99_check_guitar_switch_states(sxdata, sxlength);
     read_FC300_CTL_assigns(sxdata, sxlength);
   }
 
@@ -110,10 +110,10 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
   // Check if it is a message from a VG-99 in FC300 mode.
   if ((sxdata[3] == 0x00) && (sxdata[4] == 0x00) && (sxdata[5] == 0x20)) {
     uint16_t address = (sxdata[7] << 8) + sxdata[8]; // Make the address 16 bit
-    
+
     // Check if it is a data request - here we have to fool the VG99 into believing there is an FC300 attached
     // I found the numbers by packet sniffing the communication between the two devices. The addresses are not mentioned in the FC300 manual.
-    
+
     if (sxdata[6] == 0x11) {
       if (address == 0x0000) { // Request for address 0x0000
         VG99_FC300_mode = true; //We are in FC300 mode!!!
@@ -121,7 +121,7 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
         Serial.println("VG99 request for address 0x0000 answered");
       }
       if (address == 0x0400) { // Request for address 0x0400
-        write_VG99fc(0x0400, 0x03); // Answer with one number - 03
+        //write_VG99fc(0x0400, 0x03); // Answer with one number - 03
         Serial.println("VG99 request for address 0x0400 answered");
       }
       if (address == 0x0600) { // Request for address 0x0600
@@ -130,7 +130,7 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
         VG99_fix_reverse_pedals();
       }
     }
-    
+
     // Check if it is the patch name (address: 0x60, 0x40)
     if ((sxdata[6] == 0x12) && (address == 0x6040) ) {
       VG99_patch_name = "";
@@ -144,14 +144,14 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
 
 void check_PC_in_VG99(byte channel, byte program) {
   // Check the source by checking the channel
-  if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
+  /*if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
     if (VG99_patch_number != (VG99_CC01 * 100) + program) {
       VG99_patch_number = (VG99_CC01 * 100) + program;
       VG99_do_after_patch_selection();
       Serial.println("Receive PC (VG99):" + String(VG99_patch_number));
     }
     //}
-  }
+  }*/
 }
 
 void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlength)
@@ -164,7 +164,7 @@ void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     VG99_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
     Serial.println("VG-99 detected on MIDI port " + String(Current_MIDI_port));
     //write_VG99(VG99_EDITOR_MODE_ON); // Put the VG-99 into editor mode - saves lots of messages on the VG99 display, but also overloads the buffer
-    write_VG99fc(FC300_SYSEX_MODE); // Wakes up the VG99 to the FC300
+    //write_VG99fc(FC300_SYSEX_MODE); // Wakes up the VG99 to the FC300
     VG99_do_after_patch_selection();
   }
 }
@@ -248,35 +248,41 @@ void VG99_request_name()
 }
 
 void VG99_SendPatchChange(uint8_t new_patch) {
-  if (new_patch == VG99_patch_number) VG99_unmute();
+  //if (new_patch == VG99_patch_number) VG99_unmute();
   VG99_patch_number = new_patch;
   Serial.println("Send Patch Change (VG99):" + String(VG99_patch_number));
-  /*if (VG99_MIDI_port == USBMIDI_PORT) {
-    usbMIDI.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
-    usbMIDI.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+  //write_VG99fc(FC300_NORMAL_MODE);
+  VG99_SendProgramChange();
+  //write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
+  VG99_do_after_patch_selection();
+}
+
+void VG99_SendProgramChange() {
+  if (VG99_MIDI_port == USBMIDI_PORT) {
+    usbMIDI.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
+    usbMIDI.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   }
   if (VG99_MIDI_port == MIDI1_PORT) {
-    MIDI1.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
-    MIDI1.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+    MIDI1.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI1.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   }
   if (VG99_MIDI_port == MIDI2_PORT) {
-    MIDI2.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
-    MIDI2.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
+    MIDI2.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI2.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   }
   if (VG99_MIDI_port == MIDI3_PORT) {
-    MIDI3.sendControlChange(0 , VG99_patch_number / 128, VG99_MIDI_channel); // First send the bank number to CC00
-    MIDI3.sendProgramChange(VG99_patch_number % 128, VG99_MIDI_channel);
-  }*/
-  write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
-  VG99_do_after_patch_selection();
+    MIDI3.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
+    MIDI3.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
+  }
 }
 
 void VG99_do_after_patch_selection() {
   GP10_mute();
   GR55_mute();
-  VG99_request_guitar_switch_states();
+  //VG99_request_guitar_switch_states();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) VG99_send_bpm();
-  if (VG99_FC300_mode == false) VG99_request_name();
+  //if (VG99_FC300_mode == false)
+  VG99_request_name();
   Request_FC300_CTL_first_assign(); // will start after VG99_request-guitar_onoff_state is done - they often ask for the same info.
   update_LEDS = true;
   update_lcd = true;
@@ -288,23 +294,21 @@ void VG99_send_bpm() {
   write_VG99(VG99_TEMPO, (bpm - 40) / 128, (bpm - 40) % 128); // Tempo is modulus 128 on the VG99. And sending 0 gives tempo 40.
 }
 
-void VG99_VLINK_LED_ON() {
-  //if (VG99_VLINK_LED_CC > 0) {
-  //if (VG99_MIDI_port == USBMIDI_PORT)
-  Serial.print("x");
-  if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_VLINK_LED_CC , 127, VG99_MIDI_channel);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_VLINK_LED_CC , 127, VG99_MIDI_channel);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_VLINK_LED_CC , 127, VG99_MIDI_channel);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_VLINK_LED_CC , 127, VG99_MIDI_channel);
-  //}
+void VG99_TAP_TEMPO_LED_ON() {
+  if (VG99_TAP_TEMPO_LED_CC > 0) {
+    if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
+  }
 }
 
-void VG99_VLINK_LED_OFF() {
-  if (VG99_VLINK_LED_CC > 0) {
-    if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_VLINK_LED_CC , 0, VG99_MIDI_channel);
-    if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_VLINK_LED_CC , 0, VG99_MIDI_channel);
-    if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_VLINK_LED_CC , 0, VG99_MIDI_channel);
-    if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_VLINK_LED_CC , 0, VG99_MIDI_channel);
+void VG99_TAP_TEMPO_LED_OFF() {
+  if (VG99_TAP_TEMPO_LED_CC > 0) {
+    if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
   }
 }
 // ********************************* Section 4: VG99 controller functions ***********************************************
@@ -331,29 +335,40 @@ void VG99_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
     if (address == VG99_COSM_GUITAR_B_SW) {
       VG99_COSM_B_onoff = sxdata[11];  // Store the value
       VG99_request_onoff = false;
-      Request_FC300_CTL_first_assign(); // Now request the assigns...
+      //Request_FC300_CTL_first_assign(); // Now request the assigns...
     }
   }
 }
 
 void VG99_select_switch() {
   if (VG99_select_LED == VG99_PATCH_COLOUR) {
-    VG99_always_on = !VG99_always_on; // Toggle VG99_always_on
-    if (VG99_always_on) show_status_message("VG99 always ON");
-    else show_status_message("VG99 can be muted");
+    VG99_always_on_toggle();
   }
   else {
     VG99_unmute();
+    GP10_mute();
+    GR55_mute();
     show_status_message(VG99_patch_name); // Show the correct patch name
   }
-  GP10_mute();
-  GR55_mute();
+}
+
+void VG99_always_on_toggle() {
+  VG99_always_on = !VG99_always_on; // Toggle VG99_always_on
+  if (VG99_always_on) {
+    VG99_unmute();
+    show_status_message("VG99 always ON");
+  }
+  else {
+    VG99_mute();
+    show_status_message("VG99 can be muted");
+  }
 }
 
 void VG99_unmute() {
   VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
-  write_VG99(VG99_COSM_GUITAR_A_SW, VG99_COSM_A_onoff); // Switch COSM guitar on
-  write_VG99(VG99_COSM_GUITAR_B_SW, VG99_COSM_B_onoff); // Switch normal pu on
+  //write_VG99(VG99_COSM_GUITAR_A_SW, VG99_COSM_A_onoff); // Switch COSM guitar on
+  //write_VG99(VG99_COSM_GUITAR_B_SW, VG99_COSM_B_onoff); // Switch normal pu on
+  VG99_SendProgramChange(); //Just sending the program change will put the sound back on
 }
 
 void VG99_mute() {
@@ -454,7 +469,7 @@ void VG99_fix_reverse_pedals() {
   write_VG99fc(FC300_CTL5, 0x00); // Release CTL-5
   write_VG99fc(FC300_CTL7, 0x7F); // Press CTL-7
   write_VG99fc(FC300_CTL7, 0x00); // Release CTL-7
-  
+
 }
 
 // Reading of the assigns - to avoid MIDI buffer overruns in the VG99, the assigns are read one by one
@@ -465,7 +480,7 @@ void VG99_fix_reverse_pedals() {
 // 4. read_FC300_CTL_assigns() will receive the setting of the CTL assign target and store it in the FC300_ctrls array and update the LED of the assign.
 //    It will then update VG99_current_assign and request the next assign - which brings us back to step 2.
 
-#define VG99_SYSEX_WATCHDOG_LENGTH 200 // watchdog for messages (in msec)
+#define VG99_SYSEX_WATCHDOG_LENGTH 1000 // watchdog for messages (in msec)
 unsigned long VG99sysexWatchdog = 0;
 boolean VG99_sysex_watchdog_running = false;
 
@@ -537,7 +552,7 @@ void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxle
     if ((sxdata[6] == 0x12) && (address == requested_address) && (FC300_ctls[VG99_current_assign].assign_target != 0)) {
 
       Serial.println("Target received of assign " + String(VG99_current_assign) + ": " + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
-      
+
       // Write the received bytes in the array
       FC300_ctls[VG99_current_assign].target_byte1 = sxdata[11];
       FC300_ctls[VG99_current_assign].target_byte2 = sxdata[12];
@@ -901,11 +916,11 @@ void VG99_find_colours(uint8_t VG99_current_assign) {
   uint8_t type;
   uint8_t on_colour = VG99_STOMP_COLOUR_ON; // Set the default on colour
   uint8_t off_colour = VG99_STOMP_COLOUR_OFF; // Set the default on colour
-  
+
   address = FC300_ctls[VG99_current_assign].assign_target;
   type = FC300_ctls[VG99_current_assign].target_byte2;
   part = (address / 0x1000); // As the array is divided in addresses by 1000, it is easy to find the right part
-  
+
   // Lookup in array
   for (uint8_t i = 0; i < VG99_SIZE_OF_SUBLISTS; i++) {
     if (VG99_parameters[part][i].address == 0) break; //Break the loop if there is no more useful data
