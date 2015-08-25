@@ -286,7 +286,7 @@ void switchcheck_MODE_GR55_PATCH()
 {
   if (switch_pressed < 10) {
     if (GR55_bank_selection_active == false) GR55_bank_number = ((GR55_patch_number / 9) * 3); // Reset the bank to current patch - bank needs update, so the VController never jumps to other banks
-    uint8_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 1);
+    uint16_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 1);
     GR55_SendProgramChange(new_patch);
     GR55_bank_selection_active = false;
   }
@@ -316,7 +316,7 @@ void switchcheck_MODE_GR55_DIRECTSELECT2()
 void switchcheck_MODE_GR55_DIRECTSELECT3()
 {
   if (switch_pressed < 10) {
-    uint8_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
+    uint16_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
     GR55_SendProgramChange(new_patch);
     select_mode(MODE_GR55_PATCH);
   }
@@ -327,7 +327,7 @@ void switchcheck_MODE_VG99_PATCH()
 {
   if (switch_pressed < 10) {
     if (VG99_bank_selection_active == false) VG99_bank_number = (VG99_patch_number / 10); //Reset the bank to current patch
-    uint8_t new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
+    uint16_t new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
     VG99_SendPatchChange(new_patch);
     VG99_bank_selection_active = false;
   }
@@ -354,7 +354,7 @@ void switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed()  //Long pressing a numbe
 
 // Mode 11: VG99 direct select mode 2
 void switchcheck_MODE_VG99_DIRECTSELECT2() {
-  uint8_t new_patch;
+  uint16_t new_patch;
 
   if (switch_pressed < 10) {
     select_mode(MODE_VG99_PATCH);

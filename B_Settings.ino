@@ -192,10 +192,11 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define GP10_BANK_MIN 0
 #define GP10_BANK_MAX 9
 
-// GR-55 bank extend (when using bank up/down) - set values between 0 and 99 for just the user patches and 1 and 219 for user and preset banks
+// GR-55 bank extend (when using bank up/down) - set values between 0 and 99 for just the user patches and 0 and 219 for user and preset banks (guitar mode) 
+// and 0 and 135 for user and presets in bass mode. When we are in bass mode, there is a check whether we exceeded 135.
 // To keep the banks equal, make sure the numbers can be divided by three, because we always have three banks on display
 #define GR55_BANK_MIN 0
-#define GR55_BANK_MAX 219
+uint8_t GR55_BANK_MAX = 219;
 
 // VG-99 bank extend (when using bank up/down) - set values between 0 and 19 for just the user patches and 0 and 39 for user and preset banks
 #define VG99_BANK_MIN 0
@@ -252,6 +253,7 @@ uint16_t GR55_bank_number = 1;
 uint8_t GR55_CC01 = 0;    // the MIDI CC #01 sent by the GR-55
 boolean GR55_detected = false;
 boolean GR55_bank_selection_active = false;
+uint8_t GR55_preset_banks = 40; // Default number of preset banks is 40. When we are in bass mode, there are only 12.
 bool GR55_always_on = false;
 
 String VG99_patch_name = "                ";

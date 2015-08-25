@@ -175,8 +175,7 @@ void show_status_message(String message)
 void display_GR55_patch_string() {
   // Uses GR55_patch_number as input and returns GR55_patch_number_string as output in format "U01-1"
   // First character is L for Lead, R for Rhythm, O for Other or U for User
-  // The numbering system of the GR-55 is crazy, illogical and driving me friggin mad!!
-  // How I got the crazy numbers below? Trial and many errors. Just don't ask me to explain it.
+  // In guitar mode GR55_preset_banks is set to 40, in bass mode it is set to 12, because there a less preset banks in bass mode.
 
   uint16_t patch_number_corrected = 0; // Need a corrected version of the patch number to deal with the funny numbering system of the GR-55
   uint16_t bank_number_corrected = 0; //Also needed, because with higher banks, we start counting again
@@ -195,16 +194,16 @@ void display_GR55_patch_string() {
     bank_number_corrected = GR55_bank_number - 99;
   }
 
-  if (GR55_bank_number >= 139) {   // In the Rhythm bank we have to adjust the bank and patch numbers so we start with R01-1
+  if (GR55_bank_number >= (99 + GR55_preset_banks)) {   // In the Rhythm bank we have to adjust the bank and patch numbers so we start with R01-1
     GR55_patch_number_string = "R";
-    patch_number_corrected = GR55_patch_number - 417;
-    bank_number_corrected = GR55_bank_number - 139;
+    patch_number_corrected = GR55_patch_number - (297 + (3 * GR55_preset_banks));
+    bank_number_corrected = GR55_bank_number - (99 + GR55_preset_banks);
   }
 
-  if (GR55_bank_number >= 179) {   // In the Other bank we have to adjust the bank and patch numbers so we start with O01-1
+  if (GR55_bank_number >= (99 + (2 * GR55_preset_banks))) {   // In the Other bank we have to adjust the bank and patch numbers so we start with O01-1
     GR55_patch_number_string = "O";
-    patch_number_corrected = GR55_patch_number - 537;
-    bank_number_corrected = GR55_bank_number - 179;
+    patch_number_corrected = GR55_patch_number - (297 + (6 * GR55_preset_banks));
+    bank_number_corrected = GR55_bank_number - (99 + (2 * GR55_preset_banks));
   }
 
   // Then add the bank number

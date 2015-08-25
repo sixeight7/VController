@@ -247,7 +247,7 @@ void VG99_request_name()
   request_VG99(VG99_REQUEST_PATCHNAME);
 }
 
-void VG99_SendPatchChange(uint8_t new_patch) {
+void VG99_SendPatchChange(uint16_t new_patch) {
   //if (new_patch == VG99_patch_number) VG99_unmute();
   VG99_patch_number = new_patch;
   Serial.println("Send Patch Change (VG99):" + String(VG99_patch_number));

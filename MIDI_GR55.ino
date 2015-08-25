@@ -25,7 +25,8 @@ uint8_t GR55_MIDI_port = 0;
 // ********************************* Section 1: GR55 SYSEX messages ********************************************
 
 //Sysex messages for Roland GR-55
-#define GR55_REQUEST_PATCHNAME 0x18000000, 17 //Request 17 bytes for current patch name - GR55 send one dummy byte before the patchname data
+#define GR55_REQUEST_MODE 0x18000000, 1 //Is 00 in guitar mode, 01 in bass mode (Gumtown in town :-)
+#define GR55_REQUEST_PATCHNAME 0x18000001, 16 //Request 17 bytes for current patch name - GR55 send one dummy byte before the patchname data
 #define GR55_REQUEST_PATCH_NUMBER 0x01000000, 2 //Request current patch number
 #define GR55_CTL_LED_ON 0x18000011, 0x01
 #define GR55_CTL_LED_OFF 0x18000011, 0x00
@@ -57,11 +58,16 @@ void check_SYSEX_in_GR55(const unsigned char* sxdata, short unsigned int sxlengt
       GR55_do_after_patch_selection();
     }
 
+    // Check if it is the GR55 guitar/bass mode (address: 0x18, 0x00, 0x00, 0x00)
+    if ((sxdata[6] == 0x12) && (address == 0x18000000) && (sxdata[11] == 0x01)) {
+       GR55_preset_banks = 12; // In bass mode
+       if (GR55_BANK_MAX > 135) GR55_BANK_MAX = 135; // Check if the maximum bank number does not exceed 135 in bass mode
+    }
 
-    // Check if it is the patch name (address: 0x18, 0x00, 0x00, 0x00)
-    if ((sxdata[6] == 0x12) && (address == 0x18000000) ) {
+    // Check if it is the patch name (address: 0x18, 0x00, 0x00, 0x01)
+    if ((sxdata[6] == 0x12) && (address == 0x18000001) ) {
       GR55_patch_name = "";
-      for (uint8_t count = 12; count < 28; count++) {
+      for (uint8_t count = 11; count < 27; count++) {
         GR55_patch_name = GR55_patch_name + static_cast<char>(sxdata[count]); //Add ascii character to Patch Name String
       }
       update_lcd = true;
@@ -93,6 +99,7 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     GR55_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     GR55_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
     Serial.println("GR-55 detected on MIDI port " + String(Current_MIDI_port));
+    request_GR55(GR55_REQUEST_MODE); // Check for guitar or bass mode
     GR55_do_after_patch_selection();
   }
 }
@@ -136,7 +143,7 @@ void request_GR55(uint32_t address, uint8_t no_of_bytes)
 }
 
 // Send Program Change to GR-55
-void GR55_SendProgramChange(uint8_t new_patch) {
+void GR55_SendProgramChange(uint16_t new_patch) {
   if (new_patch == GR55_patch_number) GR55_unmute();
   GR55_patch_number = new_patch;
 
