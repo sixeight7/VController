@@ -190,6 +190,15 @@ void main_LED_control()
         show_colour(VG99_LED - 1, VG99_PATCH_COLOUR); // And show the VG99 mode LED
         LEDs.show();
         break;
+      case MODE_STOMP_4:
+        turn_all_LEDs_off();
+        // Copy the LEDs from the LEDS_STOM_GP10 array
+        for (uint8_t count = 0; count < 9; count++) {
+          show_colour(count, *LEDs_stomp_mode_ptr[3][count]);
+        }
+        show_colour(GP10_LED - 1, GP10_PATCH_COLOUR); // And show the VG99 mode LED
+        LEDs.show();
+        break;
 
       // *************************************** GP10 LED modes ***************************************
       case MODE_GP10_PATCH:
@@ -320,10 +329,10 @@ void main_LED_control()
         show_colour(LED_no, VG99_PATCH_COLOUR + 100); // + 100 makes the LED flash
         LEDs.show();
         break;
-      
+
       case MODE_COLOUR_MAKER:
         // Show the colour on the top 6 LEDS
-        for (uint8_t i=6; i<12; i++) LEDs.setPixelColor(LED_order[i], LEDs.Color(colour_maker_green, colour_maker_red, colour_maker_blue));
+        for (uint8_t i = 6; i < 12; i++) LEDs.setPixelColor(LED_order[i], LEDs.Color(colour_maker_green, colour_maker_red, colour_maker_blue));
         // Button 1 and 4 are RED
         LEDs.setPixelColor(LED_order[0], LEDs.Color(0, 1, 0));
         LEDs.setPixelColor(LED_order[3], LEDs.Color(0, 10, 0));

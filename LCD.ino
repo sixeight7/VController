@@ -97,6 +97,13 @@ void main_LCD_control()
         lcd.setCursor (0, 1);       // go to start of 2nd line
         lcd.print(VG99_patch_name);
         break;
+      case MODE_STOMP_4:
+        lcd.print("FX select  GP-10");
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print("                "); //Clear the line first
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print(GP10_patch_name);
+        break;
 
       // *************************************** GP10 LCD modes ***************************************
       case MODE_GP10_PATCH:

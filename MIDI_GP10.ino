@@ -292,6 +292,8 @@ stomper GP10_stomps[GP10_NUMBER_OF_STOMPS] = {
   {0x20000804, "NORMAL PU", GP10_STOMP_COLOUR_ON, GP10_STOMP_COLOUR_OFF, GP10_STOMP_COLOUR_OFF},*/
 };
 
+#define GP10_FX_stomp 1 // Which of the above stompboxes is used to control the FX. Start counting from zero!
+
 #define GP10_NO_OF_SUBLISTS 3
 #define GP10_SIZE_OF_SUBLISTS 17
 const PROGMEM char GP10_sublists[GP10_NO_OF_SUBLISTS][GP10_SIZE_OF_SUBLISTS][8] = {
@@ -346,6 +348,7 @@ void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int 
       if (sxdata[12] == 0x00) GP10_stomps[addr_count].LED = GP10_stomp_LED_off_colour(addr_count); // Switch the LED off
       update_LEDS = true;
       Serial.println("Stompbox:" + String(addr_count) + " Type:" + String(sxdata[13]));
+      if (GP10_current_stomp == GP10_FX_stomp) GP10_set_FX_LEDS(); // Set LEDs of FX stomps when neccesary
       if (GP10_current_stomp < GP10_NUMBER_OF_STOMPS) GP10_current_stomp++; //Move to the next stomp if we have to...
     }
   }
@@ -353,6 +356,7 @@ void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int 
 
 // Toggle GP10 stompbox parameter
 void GP10_stomp(uint8_t number) {
+  if (number == GP10_FX_stomp) GP10_FX_type_select(); // If we are toggling FX, first select the right type
   if (GP10_stomps[number].LED == GP10_stomp_LED_off_colour(number)) {
     GP10_stomps[number].LED = GP10_stomp_LED_on_colour(number); // Switch the LED on with the GP10 stomp colour
     write_GP10(GP10_stomps[number].address, 0x01);
@@ -395,5 +399,88 @@ uint8_t GP10_stomp_LED_off_colour(uint8_t number) {
   }
 }
 
+// Buttons to set the FX to a specific type
+uint8_t GP10_fx_type_LEDs[16]; //One LED for every fx LED (16 max)
 
+// GP10_fx_type_button sets the FX block of the GP-10 to the specified effect and switches it on
+// FX type numbers:
+// 0:OD/DS, 1:COMPRSR, 2:LIMITER, 3:EQ, 4:T.WAH, 5:P.SHIFT, 6:HARMO, 7:P. BEND, 8:PHASER, 9:FLANGER, 10:TREMOLO, 11:PAN, 12:ROTARY, 13:UNI-V, 14:CHORUS, 15:DELAY
+void GP10_fx_type_button(uint8_t type) {
+  // Set the FX type
+  uint8_t previous_type = GP10_stomps[GP10_FX_stomp].type;
+  if (type == previous_type) {
+    // Toggle the FX type on/off
+    GP10_stomp(GP10_FX_stomp);
+  }
+  else {
+    // Set the FX type to type
+    write_GP10(0x20005800, 0x01, type); // Switch FX on and set the type.
+    // Update the GP10_stomps array with the current settings
+    GP10_stomps[GP10_FX_stomp].type = type; // Update the array
+    GP10_stomps[GP10_FX_stomp].LED = GP10_stomp_LED_on_colour(GP10_FX_stomp); // Update the LED in the array on with the GP10 stomp colour
+    GP10_FX_type_lookup(type); // This will update the FX pointer used in the second method
+    // Display message
+    String msgtype = GP10_sublists[0][type];
+    show_status_message("FX:" + msgtype + " ON");
+  }
+  // Update the LEDs
+  GP10_fx_type_LEDs[previous_type] = GP10_FX_colours[previous_type][1]; // Switches off the old LED
+  GP10_fx_type_LEDs[type] = GP10_FX_colours[type][0]; // New LED on
+}
 
+void GP10_set_FX_LEDS() {
+  for (uint8_t i = 0; i < 17; i++) {
+    GP10_fx_type_LEDs[i] = GP10_FX_colours[i][1]; //Set the FX colours to the off-state
+  }
+  uint8_t type = GP10_stomps[GP10_FX_stomp].type;
+  GP10_fx_type_LEDs[type] = GP10_FX_colours[type][0]; // Current LED on
+  GP10_FX_type_lookup(type); // Also LED in second method on
+}
+
+// Second implemantation of FX type. This is one button, that will toggle through a number of FX types
+#define GP10_FX_NUMBER_OF_SELECTABLE_FX 7
+uint8_t GP10_FX[GP10_FX_NUMBER_OF_SELECTABLE_FX] = {0, 4, 8, 9, 10, 12, 13}; //<= Set these to the effects you want to be able to select
+
+uint8_t GP10_FX_pointer = 0; // Pointer to he current selected FX
+uint8_t GP10_FX_toggle_LED = 0;
+bool GP10_FX_selection_active = false;
+
+void GP10_FX_toggle_button() {
+  //Check if we are already in selection mode
+  if (!GP10_FX_selection_active) {
+    GP10_FX_selection_active = true; //if not switch it on
+  }
+  else {
+    // Select the next FX
+    GP10_FX_pointer++;
+    if (GP10_FX_pointer >= GP10_FX_NUMBER_OF_SELECTABLE_FX) GP10_FX_pointer = 0;
+  }
+  // Update display and LED
+  uint8_t type = GP10_FX[GP10_FX_pointer]; // Lookup the FX type in the array
+  String msgtype = GP10_sublists[0][type];
+  show_status_message("FX type: " + msgtype);
+  GP10_FX_toggle_LED = GP10_FX_colours[type][0]; // Set LED to the right colour
+}
+
+void GP10_FX_type_select() {
+  if (GP10_FX_selection_active) {
+    uint8_t type = GP10_FX[GP10_FX_pointer]; // Lookup the FX type in the array
+    // Set the FX type to type
+    write_GP10(0x20005801, type); // Set the FX type.
+    // Update the GP10_stomps array with the current settings
+    GP10_stomps[GP10_FX_stomp].type = type; // Update the array
+    GP10_stomps[GP10_FX_stomp].LED = GP10_stomp_LED_off_colour(GP10_FX_stomp); //We'll switch the LED off - so it can be switched on by the GP10_stomp function
+    GP10_FX_selection_active = false; 
+  }
+}
+
+// Will set the GP10_FX_pointer to the effect that is equal to type
+void GP10_FX_type_lookup(uint8_t type) {
+  GP10_FX_toggle_LED = 0; // Switch it off, in case we don't have the selected FX in the array
+  for (uint8_t i = 0; i < GP10_FX_NUMBER_OF_SELECTABLE_FX; i++) {
+    if (GP10_FX[i] == type) {
+      GP10_FX_pointer = i; // Set the pointer
+      GP10_FX_toggle_LED = GP10_FX_colours[GP10_FX[i]][0]; // Set LED to the right colour
+    }
+  }
+}

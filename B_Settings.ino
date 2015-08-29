@@ -60,10 +60,10 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_2_RELEASE nothing() 
 #define STOMP_SWITCH1_2_LED GP10_stomps[1].LED
 
-#define STOMP_SWITCH1_3_PRESS GP10_stomp(2)
-#define STOMP_SWITCH1_3_LONG_PRESS nothing()
+#define STOMP_SWITCH1_3_PRESS GP10_FX_toggle_button()
+#define STOMP_SWITCH1_3_LONG_PRESS select_mode(MODE_STOMP_4)
 #define STOMP_SWITCH1_3_RELEASE nothing() 
-#define STOMP_SWITCH1_3_LED GP10_stomps[2].LED
+#define STOMP_SWITCH1_3_LED GP10_FX_toggle_LED
 
 #define STOMP_SWITCH1_4_PRESS GP10_stomp(3)
 #define STOMP_SWITCH1_4_LONG_PRESS nothing()
@@ -80,10 +80,10 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_6_RELEASE nothing() 
 #define STOMP_SWITCH1_6_LED GP10_stomps[5].LED
 
-#define STOMP_SWITCH1_7_PRESS nothing()
+#define STOMP_SWITCH1_7_PRESS GP10_stomp(2)
 #define STOMP_SWITCH1_7_LONG_PRESS nothing()
 #define STOMP_SWITCH1_7_RELEASE nothing() 
-#define STOMP_SWITCH1_7_LED LEDoff
+#define STOMP_SWITCH1_7_LED GP10_stomps[2].LED
 
 #define STOMP_SWITCH1_8_PRESS nothing()
 #define STOMP_SWITCH1_8_LONG_PRESS nothing()
@@ -187,6 +187,53 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH3_9_RELEASE nothing()
 #define STOMP_SWITCH3_9_LED global_tap_tempo_LED
 
+//Set functionality of the 9 buttons in stompbox mode 4 - make sure you connect both the stomp and the LED!
+#define STOMP_SWITCH4_1_PRESS GP10_fx_type_button(0) // Set GP10 FX to Distortion
+#define STOMP_SWITCH4_1_LONG_PRESS nothing()
+#define STOMP_SWITCH4_1_RELEASE nothing() 
+#define STOMP_SWITCH4_1_LED GP10_fx_type_LEDs[0]
+
+#define STOMP_SWITCH4_2_PRESS GP10_fx_type_button(4) // Set GP10 FX to T-wah
+#define STOMP_SWITCH4_2_LONG_PRESS nothing()
+#define STOMP_SWITCH4_2_RELEASE nothing() 
+#define STOMP_SWITCH4_2_LED GP10_fx_type_LEDs[4]
+
+#define STOMP_SWITCH4_3_PRESS GP10_fx_type_button(8) // Set GP10 FX to Phaser
+#define STOMP_SWITCH4_3_LONG_PRESS nothing()
+#define STOMP_SWITCH4_3_RELEASE nothing() 
+#define STOMP_SWITCH4_3_LED GP10_fx_type_LEDs[8]
+
+#define STOMP_SWITCH4_4_PRESS GP10_fx_type_button(9) // Set GP10 FX to Flanger
+#define STOMP_SWITCH4_4_LONG_PRESS nothing()
+#define STOMP_SWITCH4_4_RELEASE nothing() 
+#define STOMP_SWITCH4_4_LED GP10_fx_type_LEDs[9]
+
+#define STOMP_SWITCH4_5_PRESS GP10_fx_type_button(10) // Set GP10 FX to Tremolo
+#define STOMP_SWITCH4_5_LONG_PRESS nothing()
+#define STOMP_SWITCH4_5_RELEASE nothing() 
+#define STOMP_SWITCH4_5_LED GP10_fx_type_LEDs[10]
+
+#define STOMP_SWITCH4_6_PRESS GP10_fx_type_button(12) // Set GP10 FX to Flanger
+#define STOMP_SWITCH4_6_LONG_PRESS nothing()
+#define STOMP_SWITCH4_6_RELEASE nothing() 
+#define STOMP_SWITCH4_6_LED GP10_fx_type_LEDs[12]
+
+#define STOMP_SWITCH4_7_PRESS select_mode(MODE_STOMP_1)
+#define STOMP_SWITCH4_7_LONG_PRESS nothing()
+#define STOMP_SWITCH4_7_RELEASE nothing() 
+#define STOMP_SWITCH4_7_LED LEDoff
+
+#define STOMP_SWITCH4_8_PRESS GP10_fx_type_button(13) // Set GP10 FX to UNI-V
+#define STOMP_SWITCH4_8_LONG_PRESS nothing()
+#define STOMP_SWITCH4_8_RELEASE nothing() 
+#define STOMP_SWITCH4_8_LED GP10_fx_type_LEDs[13]
+
+#define STOMP_SWITCH4_9_PRESS global_tap_tempo()
+#define STOMP_SWITCH4_9_LONG_PRESS start_global_tuner()
+#define STOMP_SWITCH4_9_RELEASE nothing()
+#define STOMP_SWITCH4_9_LED global_tap_tempo_LED
+
+
 // ****************** SECTION 3: PATCH UP/DOWN PATCH EXTEND SETUP ******************
 // GP-10 bank extend (when using bank up/down) - set values between 0 and 9.
 #define GP10_BANK_MIN 0
@@ -237,7 +284,8 @@ uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEP
 #define MODE_STOMP_1 20 //Used for GP-10 stomp
 #define MODE_STOMP_2 21 //Used for GR-55 stomp
 #define MODE_STOMP_3 22 //Used for VG-99 stomp
-#define NUMBER_OF_STOMP_BANKS 3
+#define MODE_STOMP_4 23 //Used for GP10 fx types
+#define NUMBER_OF_STOMP_BANKS 4
 
 String GP10_patch_name = "                ";
 uint8_t GP10_patch_number = 0;

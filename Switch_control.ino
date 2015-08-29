@@ -60,6 +60,9 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
         case MODE_STOMP_3:
           switchcheck_MODE_STOMPbox(3);
           break;
+        case MODE_STOMP_4:
+          switchcheck_MODE_STOMPbox(4);
+          break;
         case MODE_GP10_PATCH:
           switchcheck_MODE_GP10_PATCH();
           break;
@@ -119,6 +122,7 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
     if (mode == MODE_STOMP_1) switchcheck_MODE_STOMPbox_release(1);
     if (mode == MODE_STOMP_2) switchcheck_MODE_STOMPbox_release(2);
     if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_release(3);
+    if (mode == MODE_STOMP_4) switchcheck_MODE_STOMPbox_release(4);
   }
 
   // Call functions for switches being long pressed
@@ -129,7 +133,8 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
     if (mode == MODE_VG99_DIRECTSELECT2) switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed();
     if (mode == MODE_STOMP_1) switchcheck_MODE_STOMPbox_long_press(1);
     if (mode == MODE_STOMP_2) switchcheck_MODE_STOMPbox_long_press(2);
-    if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_long_press(3);    
+    if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_long_press(3);
+    if (mode == MODE_STOMP_4) switchcheck_MODE_STOMPbox_long_press(4);
 
     if (switch_long_pressed == 10) SWITCH10_LONG_FUNC;
     if (switch_long_pressed == 11) SWITCH11_LONG_FUNC;
@@ -177,6 +182,16 @@ void switchcheck_MODE_STOMPbox(uint8_t page)
   if ((page == 3) && (switch_pressed == 7)) STOMP_SWITCH3_7_PRESS;
   if ((page == 3) && (switch_pressed == 8)) STOMP_SWITCH3_8_PRESS;
   if ((page == 3) && (switch_pressed == 9)) STOMP_SWITCH3_9_PRESS;
+
+  if ((page == 4) && (switch_pressed == 1)) STOMP_SWITCH4_1_PRESS;
+  if ((page == 4) && (switch_pressed == 2)) STOMP_SWITCH4_2_PRESS;
+  if ((page == 4) && (switch_pressed == 3)) STOMP_SWITCH4_3_PRESS;
+  if ((page == 4) && (switch_pressed == 4)) STOMP_SWITCH4_4_PRESS;
+  if ((page == 4) && (switch_pressed == 5)) STOMP_SWITCH4_5_PRESS;
+  if ((page == 4) && (switch_pressed == 6)) STOMP_SWITCH4_6_PRESS;
+  if ((page == 4) && (switch_pressed == 7)) STOMP_SWITCH4_7_PRESS;
+  if ((page == 4) && (switch_pressed == 8)) STOMP_SWITCH4_8_PRESS;
+  if ((page == 4) && (switch_pressed == 9)) STOMP_SWITCH4_9_PRESS;
 }
 
 void switchcheck_MODE_STOMPbox_long_press(uint8_t page)
@@ -211,6 +226,16 @@ void switchcheck_MODE_STOMPbox_long_press(uint8_t page)
   if ((page == 3) && (switch_long_pressed == 7)) STOMP_SWITCH3_7_LONG_PRESS;
   if ((page == 3) && (switch_long_pressed == 8)) STOMP_SWITCH3_8_LONG_PRESS;
   if ((page == 3) && (switch_long_pressed == 9)) STOMP_SWITCH3_9_LONG_PRESS;
+
+  if ((page == 4) && (switch_long_pressed == 1)) STOMP_SWITCH4_1_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 2)) STOMP_SWITCH4_2_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 3)) STOMP_SWITCH4_3_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 4)) STOMP_SWITCH4_4_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 5)) STOMP_SWITCH4_5_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 6)) STOMP_SWITCH4_6_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 7)) STOMP_SWITCH4_7_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 8)) STOMP_SWITCH4_8_LONG_PRESS;
+  if ((page == 4) && (switch_long_pressed == 9)) STOMP_SWITCH4_9_LONG_PRESS;
 }
 
 void switchcheck_MODE_STOMPbox_release(uint8_t page)
@@ -245,6 +270,16 @@ void switchcheck_MODE_STOMPbox_release(uint8_t page)
   if ((page == 3) && (switch_released == 7)) STOMP_SWITCH3_7_RELEASE;
   if ((page == 3) && (switch_released == 8)) STOMP_SWITCH3_8_RELEASE;
   if ((page == 3) && (switch_released == 9)) STOMP_SWITCH3_9_RELEASE;
+
+  if ((page == 4) && (switch_released == 1)) STOMP_SWITCH4_1_RELEASE;
+  if ((page == 4) && (switch_released == 2)) STOMP_SWITCH4_2_RELEASE;
+  if ((page == 4) && (switch_released == 3)) STOMP_SWITCH4_3_RELEASE;
+  if ((page == 4) && (switch_released == 4)) STOMP_SWITCH4_4_RELEASE;
+  if ((page == 4) && (switch_released == 5)) STOMP_SWITCH4_5_RELEASE;
+  if ((page == 4) && (switch_released == 6)) STOMP_SWITCH4_6_RELEASE;
+  if ((page == 4) && (switch_released == 7)) STOMP_SWITCH4_7_RELEASE;
+  if ((page == 4) && (switch_released == 8)) STOMP_SWITCH4_8_RELEASE;
+  if ((page == 4) && (switch_released == 9)) STOMP_SWITCH4_9_RELEASE;
 }
 
 // Mode 2: GP10 patch mode - select the patch in the current bank
@@ -422,4 +457,14 @@ void init_LED_pointers() {
   LEDs_stomp_mode_ptr[2][6] = &STOMP_SWITCH3_7_LED;
   LEDs_stomp_mode_ptr[2][7] = &STOMP_SWITCH3_8_LED;
   LEDs_stomp_mode_ptr[2][8] = &STOMP_SWITCH3_9_LED;
+  
+  LEDs_stomp_mode_ptr[3][0] = &STOMP_SWITCH4_1_LED;
+  LEDs_stomp_mode_ptr[3][1] = &STOMP_SWITCH4_2_LED;
+  LEDs_stomp_mode_ptr[3][2] = &STOMP_SWITCH4_3_LED;
+  LEDs_stomp_mode_ptr[3][3] = &STOMP_SWITCH4_4_LED;
+  LEDs_stomp_mode_ptr[3][4] = &STOMP_SWITCH4_5_LED;
+  LEDs_stomp_mode_ptr[3][5] = &STOMP_SWITCH4_6_LED;
+  LEDs_stomp_mode_ptr[3][6] = &STOMP_SWITCH4_7_LED;
+  LEDs_stomp_mode_ptr[3][7] = &STOMP_SWITCH4_8_LED;
+  LEDs_stomp_mode_ptr[3][8] = &STOMP_SWITCH4_9_LED;
 }
