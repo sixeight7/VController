@@ -111,20 +111,20 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH2_3_RELEASE nothing() 
 #define STOMP_SWITCH2_3_LED GP10_select_LED
 
-#define STOMP_SWITCH2_4_PRESS nothing()
+#define STOMP_SWITCH2_4_PRESS GR55_stomp_press(0)
 #define STOMP_SWITCH2_4_LONG_PRESS nothing()
-#define STOMP_SWITCH2_4_RELEASE nothing() 
-#define STOMP_SWITCH2_4_LED LEDoff
+#define STOMP_SWITCH2_4_RELEASE GR55_stomp_release(0)
+#define STOMP_SWITCH2_4_LED GR55_ctls[0].LED
 
-#define STOMP_SWITCH2_5_PRESS nothing()
+#define STOMP_SWITCH2_5_PRESS GR55_stomp_press(1)
 #define STOMP_SWITCH2_5_LONG_PRESS nothing()
-#define STOMP_SWITCH2_5_RELEASE nothing() 
-#define STOMP_SWITCH2_5_LED LEDoff
+#define STOMP_SWITCH2_5_RELEASE GR55_stomp_release(1) 
+#define STOMP_SWITCH2_5_LED GR55_ctls[1].LED
 
-#define STOMP_SWITCH2_6_PRESS nothing()
+#define STOMP_SWITCH2_6_PRESS GR55_stomp_press(2)
 #define STOMP_SWITCH2_6_LONG_PRESS nothing()
-#define STOMP_SWITCH2_6_RELEASE nothing() 
-#define STOMP_SWITCH2_6_LED LEDoff
+#define STOMP_SWITCH2_6_RELEASE GR55_stomp_release(2)
+#define STOMP_SWITCH2_6_LED GR55_ctls[2].LED
 
 #define STOMP_SWITCH2_7_PRESS nothing()
 #define STOMP_SWITCH2_7_LONG_PRESS nothing()

@@ -39,7 +39,8 @@
 #define VG99_OFF_COLOUR 12
 #define GP10_STOMP_COLOUR_ON 4 //Yellow
 #define GP10_STOMP_COLOUR_OFF 14 //Green dimmed
-#define GR55_STOMP_COLOUR 1 //Green
+#define GR55_STOMP_COLOUR_ON 3 //Blue
+#define GR55_STOMP_COLOUR_OFF 13 //Blue dimmed
 #define VG99_STOMP_COLOUR_ON 2 //Red
 #define VG99_STOMP_COLOUR_OFF 12 //Red dimmed
 #define GLOBAL_STOMP_COLOUR_ON 2 //White

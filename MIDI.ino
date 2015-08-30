@@ -71,6 +71,8 @@ void OnProgramChange(byte channel, byte program)
 
 void OnControlChange(byte channel, byte control, byte value)
 {
+  Serial.println("CC #" + String(control) + " Value:" + String(value) + " received on channel " + String(channel)); // Show on serial debug screen
+
   // Check the source by checking the channel
   if (channel == GP10_MIDI_channel) { // GP10 outputs a control change message
 
@@ -87,15 +89,14 @@ void OnControlChange(byte channel, byte control, byte value)
       VG99_CC01 = value;
     }
   }
-  
-  Serial.println("CC #" + String(control) + " Value:"+ String(value) + " received on channel " + String(channel));
 }
 
 void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_comp)
 {
   //MIDI1.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
   //MIDI2.sendSysEx(sxlength, sxdata); // MIDI through usb to serial
-  
+  debug_sysex(sxdata, sxlength, "in-USB   ");
+
   if ((sxdata[1] == 0x41) && sx_comp) { //Check if it is a message from a Roland device
     check_SYSEX_in_GP10(sxdata, sxlength);
     check_SYSEX_in_GR55(sxdata, sxlength);
@@ -106,16 +107,13 @@ void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_c
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
     check_SYSEX_in_universal(sxdata, sxlength);
   }
-  else {
-    debug_sysex(sxdata, sxlength, "in-USB   ");
-  }
-  
 }
 
 void OnSerialSysEx(byte *sxdata, unsigned sxlength)
 {
   //usbMIDI.sendSysEx(sxlength, sxdata); // MIDI through serial to usb
-  
+  debug_sysex(sxdata, sxlength, "in-serial");
+
   if (sxdata[1] == 0x41) { //Check if it is a message from a Roland device
     check_SYSEX_in_GP10(sxdata, sxlength);
     check_SYSEX_in_GR55(sxdata, sxlength);
@@ -126,10 +124,6 @@ void OnSerialSysEx(byte *sxdata, unsigned sxlength)
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
     check_SYSEX_in_universal(sxdata, sxlength);
   }
-  else {
-    debug_sysex(sxdata, sxlength, "in-serial");
-  }
-  
 }
 
 void setup_MIDI_common()
@@ -168,6 +162,7 @@ void main_MIDI_common()
 
   check_for_roland_devices();  // Check actively if any roland devices are out there
   send_active_sense();         // Send Active Sense periodically
+  GR55_check_sysex_watchdog();
   VG99_check_sysex_watchdog();
 }
 

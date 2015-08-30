@@ -42,7 +42,7 @@ boolean VG99_FC300_mode = false; // If the FC300 is attached, patch names will b
 #define VG99_TUNER_ON 0x70000000, 0x01 // Changes the running mode to tuner / multi-mode
 #define VG99_TUNER_OFF 0x70000000, 0x00 // Changes the running mode to play
 #define VG99_TAP_TEMPO_LED_CC 80 // If you have the D-beam switched off on the VG99, make an assign on the VG99: Source CC #80, momentary, target D BEAM - SELECT - Assignable / off on every patch and you will have a flashing LED. 
-                                 // Set to zero and VController will send no CC message. You can also set the cc on the VG99 to V-link sw, but that generates a lot of midi data.
+// Set to zero and VController will send no CC message. You can also set the cc on the VG99 to V-link sw, but that generates a lot of midi data.
 
 #define VG99_PATCH_CHANGE 0x71000000 //00 00 Patch 001 and 03 0F Patch 400
 #define VG99_TEMPO 0x60000015  // Accepts values from 40 bpm - 250 bpm
@@ -283,7 +283,7 @@ void VG99_do_after_patch_selection() {
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) VG99_send_bpm();
   //if (VG99_FC300_mode == false)
   VG99_request_name();
-  Request_FC300_CTL_first_assign(); // will start after VG99_request-guitar_onoff_state is done - they often ask for the same info.
+  Request_FC300_CTL_first_assign(); // Make sure this starts after VG99_request-guitar_onoff_state is done - they often ask for the same info - switches off now
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_VG99_PATCH_MSB, (VG99_patch_number / 256));
@@ -938,7 +938,7 @@ void VG99_find_colours(uint8_t VG99_current_assign) {
   FC300_ctls[VG99_current_assign].colour_on = on_colour; // Store the colours in the assign array
   FC300_ctls[VG99_current_assign].colour_off = off_colour;
 }
-
+/*
 uint8_t VG99_find_colour_on(uint16_t address, uint8_t type) {
   uint8_t part;
   uint8_t colour = VG99_STOMP_COLOUR_ON; // Set the default colour
@@ -972,4 +972,4 @@ uint8_t VG99_find_colour_off(uint16_t address, uint8_t type) {
     }
   }
   return colour;
-}
+}*/
