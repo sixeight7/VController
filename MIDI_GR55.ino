@@ -334,6 +334,7 @@ struct GR55_CTL {       // Datastructure for GR55 assign controllers:
   uint8_t colour_on;     // Colour when the pedal is on
   uint8_t colour_off;    // Colour when the pedal is off
   uint8_t LED;           // Actual LED displaying one of the previous colours
+  bool reversed;         // True when colours are reversed
   uint32_t assign_addr;  // The address of the assign in the GR55
   bool assign_on;        // Assign: on/off
   uint16_t assign_target;// Assign: target
@@ -357,14 +358,14 @@ struct GR55_CTL {       // Datastructure for GR55 assign controllers:
 
 #define GR55_NUMBER_OF_CTLS 3 // Set to three, because I don't need that many assigns on the GR55
 GR55_CTL GR55_ctls[GR55_NUMBER_OF_CTLS] = {
-  //  {21, "ASGN1", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN1_assign, false, 0, 0, 0, 0, false, 0, 0},
-  //  {22, "ASGN2", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN2_assign, false, 0, 0, 0, 0, false, 0, 0},
-  //  {23, "ASGN3", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN3_assign, false, 0, 0, 0, 0, false, 0, 0},
-  //  {24, "ASGN4", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN4_assign, false, 0, 0, 0, 0, false, 0, 0},
-  //  {25, "ASGN5", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN5_assign, false, 0, 0, 0, 0, false, 0, 0},
-  {26, "ASGN6", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN6_assign, false, 0, 0, 0, 0, false, 0, 0},
-  {27, "ASGN7", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN7_assign, false, 0, 0, 0, 0, false, 0, 0},
-  {28, "ASGN8", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, GR55_ASSIGN8_assign, false, 0, 0, 0, 0, false, 0, 0}
+  //  {21, "ASGN1", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN1_assign, false, 0, 0, 0, 0, false, 0, 0},
+  //  {22, "ASGN2", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN2_assign, false, 0, 0, 0, 0, false, 0, 0},
+  //  {23, "ASGN3", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN3_assign, false, 0, 0, 0, 0, false, 0, 0},
+  //  {24, "ASGN4", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN4_assign, false, 0, 0, 0, 0, false, 0, 0},
+  //  {25, "ASGN5", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN5_assign, false, 0, 0, 0, 0, false, 0, 0},
+  {26, "ASGN6", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN6_assign, false, 0, 0, 0, 0, false, 0, 0},
+  {27, "ASGN7", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN7_assign, false, 0, 0, 0, 0, false, 0, 0},
+  {28, "ASGN8", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN8_assign, false, 0, 0, 0, 0, false, 0, 0}
 };
 
 uint8_t GR55_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
@@ -490,10 +491,11 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
       GR55_ctls[GR55_current_assign].target_byte2 = sxdata[12];
 
       GR55_find_colours(GR55_current_assign);
-      
+
       // Set the LED status for this ctl pedal
       Serial.println("Target byte:" + String(GR55_ctls[GR55_current_assign].target_byte1, HEX) + " == Assign max:" + String(GR55_ctls[GR55_current_assign].assign_max, HEX));
-      if (GR55_ctls[GR55_current_assign].target_byte1 == GR55_ctls[GR55_current_assign].assign_max) {
+      if (((GR55_ctls[GR55_current_assign].reversed == false) && (GR55_ctls[GR55_current_assign].target_byte1 == GR55_ctls[GR55_current_assign].assign_max)) ||
+          ((GR55_ctls[GR55_current_assign].reversed == true) && (GR55_ctls[GR55_current_assign].target_byte1 == GR55_ctls[GR55_current_assign].assign_min))) {
         GR55_ctls[GR55_current_assign].LED = GR55_ctls[GR55_current_assign].colour_on;
       }
       else {
@@ -510,6 +512,7 @@ struct Assign {  // Datastructure for parameters:
   uint16_t target; // Target of the assign as given in the assignments of the GR55
   char name[17];    // Name of the assign that will appear on the display
   uint16_t address; // Address of the assign target
+  bool reversed; // Some parameters work reversed (PCM tone and guitar are muted when on)
   uint8_t sublist;  // Number of the sublist that exists for this parameter
   uint8_t colour_on; // Colour of the LED when this parameter is on
   uint8_t colour_off; // Colour of the LED when this parameter is off
@@ -521,29 +524,31 @@ struct Assign {  // Datastructure for parameters:
 #define GR55_MOD_COLOUR_OFF 253 // Just a colour number to pick the colour from the VG99_polyFX_colours table
 
 #define GR55_PARAMETERS_PARTS 1
-#define GR55_PARAMETERS_SIZE 18
+#define GR55_PARAMETERS_SIZE 20
 const PROGMEM Assign GR55_parameters[GR55_PARAMETERS_PARTS][GR55_PARAMETERS_SIZE] = {
   { // 000 - 100
-    {0x000, "SYNTH1 SW", 0x2003, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
-    {0x03B, "SYNTH2 SW",  0x2103, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
-    {0x076, "COSM GT SW", 0x100A, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
-    {0x081, "12STRING SW", 0x101D, 0, FX_PITCH_COLOUR_ON, FX_PITCH_COLOUR_OFF},
-    {0x0D6, "AMP", 0x0700, 2, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
-    {0x0D7, "AMP GAIN",  0x0702, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
-    {0x0D9, "AMP GAIN SW", 0x0704, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
-    {0x0DA, "AMP SOLO SW", 0x0705, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
-    {0x0E0, "AMP BRIGHT", 0x070B, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
-    {0x0E6, "MOD", 0x0715, 3, GR55_MOD_COLOUR_ON, GR55_MOD_COLOUR_OFF},
+    {0x000, "SYNTH1 SW", 0x2003, true, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
+    {0x003, "PCM1 TONE OCT", 0x2005, false, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
+    {0x03B, "SYNTH2 SW",  0x2103, true, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
+    {0x03E, "PCM2 TONE OCT",  0x2105, false, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
+    {0x076, "COSM GT SW", 0x100A, true, 0, FX_GTR_COLOUR_ON, FX_GTR_COLOUR_OFF},
+    {0x081, "12STRING SW", 0x101D, false, 0, FX_PITCH_COLOUR_ON, FX_PITCH_COLOUR_OFF},
+    {0x0D6, "AMP", 0x0700, false, 2, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
+    {0x0D7, "AMP GAIN",  0x0702, false, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
+    {0x0D9, "AMP GAIN SW", 0x0704, false, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
+    {0x0DA, "AMP SOLO SW", 0x0705, false, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
+    {0x0E0, "AMP BRIGHT", 0x070B, false, 0, FX_AMP_COLOUR_ON, FX_AMP_COLOUR_OFF},
+    {0x0E6, "MOD", 0x0715, false, 3, GR55_MOD_COLOUR_ON, GR55_MOD_COLOUR_OFF},
 
-    {0x128, "NS SWITCH", 0x075A, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
-    {0x12B, "MFX", 0x0304, 1, GR55_MFX_COLOUR_ON, GR55_MFX_COLOUR_OFF},
-    {0x1EC, "DELAY SW", 0x0605, 0, FX_DELAY_COLOUR_ON, FX_DELAY_COLOUR_OFF},
-    {0x1F4, "REVERB SW", 0x060C, 0, FX_REVERB_COLOUR_ON, FX_REVERB_COLOUR_OFF},
-    {0x1FC, "CHORUS SW", 0x0600, 0, FX_MODULATE_COLOUR_ON, FX_MODULATE_COLOUR_OFF},
+    {0x128, "NS SWITCH", 0x075A, false, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
+    {0x12B, "MFX", 0x0304, false, 1, GR55_MFX_COLOUR_ON, GR55_MFX_COLOUR_OFF},
+    {0x1EC, "DELAY SW", 0x0605, false, 0, FX_DELAY_COLOUR_ON, FX_DELAY_COLOUR_OFF},
+    {0x1F4, "REVERB SW", 0x060C, false, 0, FX_REVERB_COLOUR_ON, FX_REVERB_COLOUR_OFF},
+    {0x1FC, "CHORUS SW", 0x0600, false, 0, FX_MODULATE_COLOUR_ON, FX_MODULATE_COLOUR_OFF},
 
-    {0x204, "EQ SWITCH", 0x0611, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
-    {0x213, "ALT.TUNING", 0x0234, 0, FX_PITCH_COLOUR_ON, FX_PITCH_COLOUR_OFF},
-    {0x216, "PATCH LVL", 0x0230, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
+    {0x204, "EQ SWITCH", 0x0611, false, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
+    {0x213, "ALT.TUNING", 0x0234, false, 0, FX_PITCH_COLOUR_ON, FX_PITCH_COLOUR_OFF},
+    {0x216, "PATCH LVL", 0x0230, false, 0, FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF},
   }
 };
 
@@ -658,8 +663,9 @@ void GR55_find_colours(uint8_t current_assign) {
 
   uint8_t on_colour = GR55_STOMP_COLOUR_ON; // Set the default on colour
   uint8_t off_colour = GR55_STOMP_COLOUR_OFF; // Set the default on colour
+  bool reversed = false; //Default is LEDs are not reversed
 
-uint8_t part;
+  uint8_t part;
   uint16_t target; // the address of the current assign target
   uint8_t type;
   //uint16_t address = 0;
@@ -667,7 +673,7 @@ uint8_t part;
   target = GR55_ctls[current_assign].assign_target;
   type = GR55_ctls[current_assign].target_byte2;
   part = 0; // No parts yet
-  
+
   for (uint8_t i = 0; i < GR55_PARAMETERS_SIZE; i++) {
     //if (GR55_parameters[part][i].address == 0) break; //Break the loop if there is no more useful data
     if (target == GR55_parameters[part][i].target) { //Check is we've found the right target
@@ -679,8 +685,17 @@ uint8_t part;
       off_colour = GR55_parameters[part][i].colour_off;
       if (off_colour == GR55_MFX_COLOUR_OFF) off_colour = GR55_MFX_colours[type][1]; // For FX1 and FX2 pick the colour from the FX_colours array
       if (off_colour == GR55_MOD_COLOUR_OFF) off_colour = GR55_MOD_colours[type][1]; // For FX1 and FX2 pick the colour from the FX_colours array
+      // Read reversed setting
+      reversed = GR55_parameters[part][i].reversed;
     }
   }
-  GR55_ctls[current_assign].colour_on = on_colour; // Store the colours in the assign array
-  GR55_ctls[current_assign].colour_off = off_colour;
+  if (GR55_ctls[current_assign].assign_max > GR55_ctls[current_assign].assign_min) {
+    GR55_ctls[current_assign].colour_on = on_colour; // Store the colours in the assign array
+    GR55_ctls[current_assign].colour_off = off_colour;
+  }
+  else {
+    GR55_ctls[current_assign].colour_on = off_colour; // Store the colours reversed when assign_min and max are reversed as well
+    GR55_ctls[current_assign].colour_off = on_colour;
+  }
+  GR55_ctls[current_assign].reversed = reversed;
 }
