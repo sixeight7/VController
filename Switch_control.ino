@@ -310,6 +310,7 @@ void switchcheck_MODE_GP10_DIRECTSELECT2()
   if (switch_pressed <= 10) {
     select_mode(MODE_GP10_PATCH);
     uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed % 10) - 1; // switch_pressed % 10 makes buton 10 zero
+    if (new_patch == 255) new_patch = 0;
     switch10_used = true;
     GP10_SendProgramChange(new_patch);
   }
@@ -341,6 +342,7 @@ void switchcheck_MODE_GR55_DIRECTSELECT1()
 void switchcheck_MODE_GR55_DIRECTSELECT2()
 {
   if (switch_pressed < 11) {
+    if (switch_pressed == 10) switch_pressed = 1;
     GR55_bank_number = GR55_bank_number + (switch_pressed % 10); // Modulus 10 makes button 10 zero
     mode = MODE_GR55_DIRECTSELECT3;
     switch10_used = true;
@@ -350,10 +352,11 @@ void switchcheck_MODE_GR55_DIRECTSELECT2()
 // Mode 8: GR55 DirectSelect3 - press the actual patch number
 void switchcheck_MODE_GR55_DIRECTSELECT3()
 {
-  if (switch_pressed < 10) {
+  if (switch_pressed <= 10) {
     uint16_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
     GR55_SendProgramChange(new_patch);
     select_mode(MODE_GR55_PATCH);
+    switch10_used = true;
   }
 }
 
@@ -398,7 +401,8 @@ void switchcheck_MODE_VG99_DIRECTSELECT2() {
   }
   if (switch_pressed == 10) {
     select_mode(MODE_VG99_PATCH);
-    new_patch = (VG99_bank_number) * 10 - 1;
+    if (VG99_bank_number > 0) new_patch = (VG99_bank_number) * 10 - 1;
+    else new_patch = 0;
     VG99_bank_number = VG99_bank_number - 1;
     VG99_SendPatchChange(new_patch);
     switch10_used = true;
