@@ -41,8 +41,8 @@ void setup_eeprom()
   GP10_patch_number = EEPROM.read(EEPROM_GP10_PATCH_NUMBER);
   GR55_patch_number = (EEPROM.read(EEPROM_GR55_PATCH_MSB) * 256) + EEPROM.read(EEPROM_GR55_PATCH_LSB);
   VG99_patch_number = (EEPROM.read(EEPROM_VG99_PATCH_MSB) * 256) + EEPROM.read(EEPROM_VG99_PATCH_LSB);
-  if (mode == 0) mode = GP10_patch_number = EEPROM.read(EEPROM_mode); //if mode is set to a different value under settings, the last state is not read from EEPROM
-   bpm = GP10_patch_number = EEPROM.read(EEPROM_bpm);
+  if (mode == 0) mode = EEPROM.read(EEPROM_mode); //if mode is set to a different value under settings, the last state is not read from EEPROM
+   bpm = EEPROM.read(EEPROM_bpm);
 }
 
 void main_eeprom()
