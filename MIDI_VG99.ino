@@ -62,6 +62,11 @@ bool VG99_request_onoff = false;
 #define FC300_NORMAL_MODE 0x1000, 0x00
 
 uint8_t VG99_MIDI_port = 0;
+uint8_t VG99_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
+
+#define VG99_SYSEX_WATCHDOG_LENGTH 1000 // watchdog for messages (in msec)
+unsigned long VG99sysexWatchdog = 0;
+boolean VG99_sysex_watchdog_running = false;
 
 // VG99 handshake with FC300
 // 1. VG99 sends continually F0 41 7F 00 00 1F 11 00 01 7F F7 on RRC port (not on other ports)
@@ -144,14 +149,13 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
 
 void check_PC_in_VG99(byte channel, byte program) {
   // Check the source by checking the channel
-  /*if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
+  if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
     if (VG99_patch_number != (VG99_CC01 * 100) + program) {
       VG99_patch_number = (VG99_CC01 * 100) + program;
       VG99_do_after_patch_selection();
       Serial.println("Receive PC (VG99):" + String(VG99_patch_number));
     }
-    //}
-  }*/
+  }
 }
 
 void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlength)
@@ -174,71 +178,71 @@ void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
 void write_VG99(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x01C, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99)");
 }
 
 void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x01C, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(15, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(15, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(VG99)");
 }
 
 void write_VG99fc(uint16_t address, uint8_t value) // VG99 writing to the FC300
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[12] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(12, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(12, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(12, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(12, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(11, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(11, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(VG99fc)");
 }
 
 void write_VG99fc(uint16_t address, uint8_t value1, uint8_t value2, uint8_t value3) // VG99 writing to the FC300 - 3 bytes version
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[1] + ad[0] + value1 + value2 + value3) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[1] + ad[0] + value1 + value2 + value3); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value1, value2, value3, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99fc)");
 }
 
 void write_VG99rrc(uint8_t address, uint8_t value) // VG99 writing to the FC300 in undocumented mode
 {
-  uint8_t checksum = (0x80 - (address + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(address + value); // Calculate the Roland checksum
   uint8_t sysexmessage[11] = {0xF0, 0x41, 0x7F, 0x00, 0x00, 0x01F, 0x12, address, value, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(11, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(11, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(11, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(11, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(10, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(10, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(10, sysexmessage);
   debug_sysex(sysexmessage, 11, "out(VG99rrc)");
 }
 
 void request_VG99(uint32_t address, uint8_t no_of_bytes)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[17] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x1C, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(17, sysexmessage);
-  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(17, sysexmessage);
-  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(17, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(17, sysexmessage);
+  if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(16, sysexmessage);
+  if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(VG99)");
 }
 
@@ -277,6 +281,11 @@ void VG99_SendProgramChange() {
 }
 
 void VG99_do_after_patch_selection() {
+  no_device_check = true; // disables checking for devices during reading of GR_55
+  VG99_current_assign = 255; // In case we were still in the middle of a previous patch change, switch off the lot
+  VG99_request_onoff = false;
+  VG99_sysex_watchdog_running = false;
+  
   GP10_mute();
   GR55_mute();
   //VG99_request_guitar_switch_states();
@@ -295,7 +304,7 @@ void VG99_send_bpm() {
 }
 
 void VG99_TAP_TEMPO_LED_ON() {
-  if (VG99_TAP_TEMPO_LED_CC > 0) {
+  if ((VG99_TAP_TEMPO_LED_CC > 0) && (VG99_detected)) {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
@@ -304,7 +313,7 @@ void VG99_TAP_TEMPO_LED_ON() {
 }
 
 void VG99_TAP_TEMPO_LED_OFF() {
-  if (VG99_TAP_TEMPO_LED_CC > 0) {
+  if ((VG99_TAP_TEMPO_LED_CC > 0) && (VG99_detected)) {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
@@ -429,8 +438,6 @@ FC300_CTL FC300_ctls[FC300_NUMBER_OF_CTLS] = {
   {FC300_CTL8, "CTL8", VG99_STOMP_COLOUR_ON, VG99_STOMP_COLOUR_OFF, 0, VG99_FC300_CTL8_assign, false, 0, 0, 0, false, 0, 0}
 };
 
-uint8_t VG99_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
-
 void FC300_stomp_press(uint8_t number) {
 
   // Press the FC300 pedal via sysex
@@ -480,11 +487,6 @@ void VG99_fix_reverse_pedals() {
 // 4. read_FC300_CTL_assigns() will receive the setting of the CTL assign target and store it in the FC300_ctrls array and update the LED of the assign.
 //    It will then update VG99_current_assign and request the next assign - which brings us back to step 2.
 
-#define VG99_SYSEX_WATCHDOG_LENGTH 1000 // watchdog for messages (in msec)
-unsigned long VG99sysexWatchdog = 0;
-boolean VG99_sysex_watchdog_running = false;
-
-
 void Request_FC300_CTL_first_assign() {
   VG99_current_assign = 0; //After the name is read, the assigns can be read
   Serial.println("Start reading FC300 CTL assigns");
@@ -498,7 +500,10 @@ void Request_FC300_CTL_current_assign() { //Will request the next assign - the a
     request_VG99(FC300_ctls[VG99_current_assign].assign_addr, 8); // Request 8 bytes for the assign
     VG99_set_sysex_watchdog(); // Set the timer
   }
-  else VG99_sysex_watchdog_running = false; // Stop the timer
+  else {
+    VG99_sysex_watchdog_running = false; // Stop the timer
+    no_device_check = false;
+  }
 }
 
 void VG99_set_sysex_watchdog() {

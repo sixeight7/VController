@@ -42,22 +42,22 @@ void FC300_identity_check(const unsigned char* sxdata, short unsigned int sxleng
 void write_FC300own(uint32_t address, uint8_t value)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x01E, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
   usbMIDI.sendSysEx(14, sysexmessage);
-  MIDI1.sendSysEx(14, sysexmessage);
-  MIDI2.sendSysEx(14, sysexmessage);
+  MIDI1.sendSysEx(13, sysexmessage);
+  MIDI2.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(FC300o)");
 }
 
 void write_FC300fc(uint16_t address, uint8_t value)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[12] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value, checksum, 0xF7};
   usbMIDI.sendSysEx(12, sysexmessage);
-  MIDI1.sendSysEx(12, sysexmessage);
-  MIDI2.sendSysEx(12, sysexmessage);
+  MIDI1.sendSysEx(11, sysexmessage);
+  MIDI2.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(FC300f)");
 }
 

@@ -46,6 +46,7 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI3); //Enables serial3 port for
 #define MIDI2_PORT 2
 #define MIDI3_PORT 3
 uint8_t Current_MIDI_port;
+bool no_device_check = false; // Check for devices should not occur right after a patch change.
 
 // ******************************** MIDI In section ********************************************
 
@@ -112,7 +113,7 @@ void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_c
 void OnSerialSysEx(byte *sxdata, unsigned sxlength)
 {
   //usbMIDI.sendSysEx(sxlength, sxdata); // MIDI through serial to usb
-  debug_sysex(sxdata, sxlength, "in-serial");
+  debug_sysex(sxdata, sxlength, "in-serial" + String(Current_MIDI_port));
 
   if (sxdata[1] == 0x41) { //Check if it is a message from a Roland device
     check_SYSEX_in_GP10(sxdata, sxlength);
@@ -135,6 +136,7 @@ void setup_MIDI_common()
   usbMIDI.setHandleSysEx(OnSysEx);
 
   MIDI1.begin(MIDI_CHANNEL_OMNI);
+  MIDI1.turnThruOff();
   MIDI1.setHandleNoteOff(OnNoteOff);
   MIDI1.setHandleNoteOn(OnNoteOn) ;
   MIDI1.setHandleProgramChange(OnProgramChange);
@@ -142,11 +144,20 @@ void setup_MIDI_common()
   MIDI1.setHandleSystemExclusive(OnSerialSysEx);
 
   MIDI2.begin(MIDI_CHANNEL_OMNI);
+  MIDI2.turnThruOff();
   MIDI2.setHandleNoteOff(OnNoteOff);
   MIDI2.setHandleNoteOn(OnNoteOn) ;
   MIDI2.setHandleProgramChange(OnProgramChange);
   MIDI2.setHandleControlChange(OnControlChange);
   MIDI2.setHandleSystemExclusive(OnSerialSysEx);
+  
+  MIDI3.begin(MIDI_CHANNEL_OMNI);
+  MIDI3.turnThruOff();
+  MIDI3.setHandleNoteOff(OnNoteOff);
+  MIDI3.setHandleNoteOn(OnNoteOn) ;
+  MIDI3.setHandleProgramChange(OnProgramChange);
+  MIDI3.setHandleControlChange(OnControlChange);
+  MIDI3.setHandleSystemExclusive(OnSerialSysEx);
 }
 
 void main_MIDI_common()
@@ -192,12 +203,14 @@ void check_for_roland_devices()
   if (millis() - Check4DevicesTimer > CHECK4DEVICES_TIMER_LENGTH) {
     Check4DevicesTimer = millis(); // Reset the timer
 
-    // Send the message to all MIDI ports
-    uint8_t sysexbuffer[6] = Anybody_out_there;
-    usbMIDI.sendSysEx(6, sysexbuffer);
-    MIDI1.sendSysEx(6, sysexbuffer);
-    MIDI2.sendSysEx(6, sysexbuffer);
-    debug_sysex(sysexbuffer, 6, "CKout");
+    // Send the message to all MIDI ports if no_device_check is not true!!
+    if (no_device_check == false) {
+      uint8_t sysexbuffer[6] = Anybody_out_there;
+      usbMIDI.sendSysEx(6, sysexbuffer);
+      MIDI1.sendSysEx(5, sysexbuffer);
+      MIDI2.sendSysEx(5, sysexbuffer);
+      debug_sysex(sysexbuffer, 6, "CKout");
+    }
   }
 }
 
@@ -235,4 +248,11 @@ void send_active_sense() {
     MIDI2.sendRealTime(ActiveSensing);
     MIDI3.sendRealTime(ActiveSensing);
   }
+}
+
+// Calculate the Roland checksum
+uint8_t calc_checksum(uint16_t sum) {
+  uint8_t checksum = 0x80 - (sum % 0x80);
+  if (checksum == 0x80) checksum = 0;
+  return checksum;
 }

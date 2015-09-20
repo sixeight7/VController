@@ -119,36 +119,36 @@ void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
 void write_GP10(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
-  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(15, sysexmessage);
-  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(15, sysexmessage);
+  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
+  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GP10)");
 }
 
 void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[16] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(16, sysexmessage);
-  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(16, sysexmessage);
-  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(16, sysexmessage);
+  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(15, sysexmessage);
+  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(15, sysexmessage);
   debug_sysex(sysexmessage, 16, "out(GP10)");
 }
 
 void request_GP10(uint32_t address, uint8_t no_of_bytes)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[18] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(18, sysexmessage);
-  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(18, sysexmessage);
-  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(18, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(18, sysexmessage);
+  if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(17, sysexmessage);
+  if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(17, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(17, sysexmessage);
   debug_sysex(sysexmessage, 18, "out(GP10)");
 }
 

@@ -33,8 +33,10 @@
 
 void setup()
 {
-  Serial.begin(115200);
   setup_LED_control(); //Should be first, to reduce startup flash of LEDs
+  Serial.begin(115200);
+  while(!Serial); // Wait until the serial communication is ready
+  Serial.println("VController started...");
   setup_eeprom();
   setup_switch_check();
   setup_switch_control();

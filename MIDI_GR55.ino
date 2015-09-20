@@ -42,6 +42,12 @@ uint8_t GR55_synth2_onoff = 0;
 uint8_t GR55_COSM_onoff = 0;
 uint8_t GR55_nrml_pu_onoff = 0;
 bool GR55_request_onoff = false;
+uint8_t GR55_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
+
+#define GR55_SYSEX_WATCHDOG_LENGTH 1000 // watchdog for messages (in msec)
+unsigned long GR55sysexWatchdog = 0;
+boolean GR55_sysex_watchdog_running = false;
+
 
 // ********************************* Section 2: G%55 comon MIDI in functions ********************************************
 
@@ -112,36 +118,36 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
 void write_GR55(uint32_t address, uint8_t value) // For sending one data byte
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x053, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
-  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
-  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
+  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(GR55)");
 }
 
 void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x053, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
-  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(15, sysexmessage);
-  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(15, sysexmessage);
+  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
+  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GR55)");
 }
 
 void request_GR55(uint32_t address, uint8_t no_of_bytes)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
-  uint8_t checksum = (0x80 - (ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes) % 0x80); // Calculate the Roland checksum
+  uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[17] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x53, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(17, sysexmessage);
-  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(17, sysexmessage);
-  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(17, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(17, sysexmessage);
+  if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(16, sysexmessage);
+  if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(GR55)");
 }
 
@@ -186,6 +192,11 @@ void GR55_SendProgramChange(uint16_t new_patch) {
 }
 
 void GR55_do_after_patch_selection() {
+  no_device_check = true; // disables checking for devices during reading of GR_55
+  GR55_current_assign = 255; // In case we were still in the middle of a previous patch change, switch off the lot
+  GR55_request_onoff = false;
+  GR55_sysex_watchdog_running = false;
+  
   GP10_mute();
   VG99_mute();
   GR55_request_name();
@@ -368,8 +379,6 @@ GR55_CTL GR55_ctls[GR55_NUMBER_OF_CTLS] = {
   {28, "ASGN8", GR55_STOMP_COLOUR_ON, GR55_STOMP_COLOUR_OFF, 0, false, GR55_ASSIGN8_assign, false, 0, 0, 0, 0, false, 0, 0}
 };
 
-uint8_t GR55_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
-
 void GR55_stomp_press(uint8_t number) {
 
   // Press the pedal via cc
@@ -411,11 +420,6 @@ void GR55_stomp_release(uint8_t number) {
 // 4. read_GR55_CTL_assigns() will receive the setting of the CTL assign target and store it in the GR55_ctrls array and update the LED of the assign.
 //    It will then update GR55_current_assign and request the next assign - which brings us back to step 2.
 
-#define GR55_SYSEX_WATCHDOG_LENGTH 1000 // watchdog for messages (in msec)
-unsigned long GR55sysexWatchdog = 0;
-boolean GR55_sysex_watchdog_running = false;
-
-
 void Request_GR55_CTL_first_assign() {
   GR55_current_assign = 0; //After the name is read, the assigns can be read
   Serial.println("Start reading GR55 assigns");
@@ -429,7 +433,10 @@ void Request_GR55_CTL_current_assign() { //Will request the next assign - the as
     request_GR55(GR55_ctls[GR55_current_assign].assign_addr, 12); // Request 12 bytes for the assign
     GR55_set_sysex_watchdog(); // Set the timer
   }
-  else GR55_sysex_watchdog_running = false; // Stop the timer
+  else {
+    GR55_sysex_watchdog_running = false; // Stop the timer
+    no_device_check = false; // restart device check
+  }
 }
 
 void GR55_set_sysex_watchdog() {
