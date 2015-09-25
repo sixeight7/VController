@@ -37,9 +37,23 @@ unsigned long SendActiveSenseTimer = 0;
 
 // ***************************** Hardware settings *****************************
 // Setup serial ports - the usb MIDI is set by TeensyDuino (set USB Type to MIDI!)
+/*
+struct MySettings : public midi::DefaultSettings
+ {
+    //static const bool UseRunningStatus = false; // Messes with my old equipment!
+    //static const bool Use1ByteParsing = false; // More focus on reading messages - will this help the equipment from stopping with receiving data?
+    static const unsigned SysExMaxSize = 256; // Change sysex buffersize
+ };
+MIDI_CREATE_CUSTOM_INSTANCE(HardwareSerial, Serial1, MIDI1, MySettings);
+MIDI_CREATE_CUSTOM_INSTANCE(HardwareSerial, Serial2, MIDI2, MySettings);
+MIDI_CREATE_CUSTOM_INSTANCE(HardwareSerial, Serial3, MIDI3, MySettings);
+*/
+
+// Default setup MIDI
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI1); //Enables serial1 port for MIDI communication!
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial2, MIDI2); //Enables serial2 port for MIDI communication!
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI3); //Enables serial3 port for MIDI communication!
+
 
 #define USBMIDI_PORT 0
 #define MIDI1_PORT 1
@@ -127,6 +141,52 @@ void OnSerialSysEx(byte *sxdata, unsigned sxlength)
   }
 }
 
+// Use incoming active sense massages as a watchdog for MIDI - give a message when MIDI connection is lost.
+#define MIDI1_WATCHDOG_LENGTH 1000 // watchdog for active sense messages (in msec)
+unsigned long MIDI1_watchdog = 0;
+bool MIDI1_active = false;
+
+void OnActiveSenseMIDI1() {
+  MIDI1_watchdog = millis() + MIDI1_WATCHDOG_LENGTH;
+  MIDI1_active = true;
+}
+
+void Check_MIDI1_watchdog() {
+  if ((MIDI1_active) && (millis() > MIDI1_watchdog)) {
+    show_status_message("MIDI 1 lost...");
+    MIDI1_active = false;
+    // Can we "reboot the serial connection"?:
+    //MIDI1.resetInput();
+    /*Serial1.end(); // Shut down the serial port
+    delay(10);
+    MIDI1.begin(MIDI_CHANNEL_OMNI);
+    MIDI1.turnThruOff();
+    MIDI1.setHandleNoteOff(OnNoteOff);
+    MIDI1.setHandleNoteOn(OnNoteOn) ;
+    MIDI1.setHandleProgramChange(OnProgramChange);
+    MIDI1.setHandleControlChange(OnControlChange);
+    MIDI1.setHandleSystemExclusive(OnSerialSysEx);
+    MIDI1.setHandleActiveSensing(OnActiveSenseMIDI1);
+    */
+  }
+}
+
+#define MIDI2_WATCHDOG_LENGTH 1000 // watchdog for active sense messages (in msec)
+unsigned long MIDI2_watchdog = 0;
+bool MIDI2_active = false;
+
+void OnActiveSenseMIDI2() {
+  MIDI2_watchdog = millis() + MIDI2_WATCHDOG_LENGTH;
+  MIDI2_active = true;
+}
+
+void Check_MIDI2_watchdog() {
+  if ((MIDI2_active) && (millis() > MIDI2_watchdog)) {
+    show_status_message("MIDI 2 lost...");
+    MIDI2_active = false;
+  }
+}
+
 void setup_MIDI_common()
 {
   usbMIDI.setHandleNoteOff(OnNoteOff);
@@ -142,6 +202,7 @@ void setup_MIDI_common()
   MIDI1.setHandleProgramChange(OnProgramChange);
   MIDI1.setHandleControlChange(OnControlChange);
   MIDI1.setHandleSystemExclusive(OnSerialSysEx);
+  MIDI1.setHandleActiveSensing(OnActiveSenseMIDI1);
 
   MIDI2.begin(MIDI_CHANNEL_OMNI);
   MIDI2.turnThruOff();
@@ -150,7 +211,8 @@ void setup_MIDI_common()
   MIDI2.setHandleProgramChange(OnProgramChange);
   MIDI2.setHandleControlChange(OnControlChange);
   MIDI2.setHandleSystemExclusive(OnSerialSysEx);
-  
+  MIDI2.setHandleActiveSensing(OnActiveSenseMIDI2);
+
   MIDI3.begin(MIDI_CHANNEL_OMNI);
   MIDI3.turnThruOff();
   MIDI3.setHandleNoteOff(OnNoteOff);
@@ -175,6 +237,8 @@ void main_MIDI_common()
   send_active_sense();         // Send Active Sense periodically
   GR55_check_sysex_watchdog();
   VG99_check_sysex_watchdog();
+  Check_MIDI1_watchdog();
+  Check_MIDI2_watchdog();
 }
 
 // *************************************** Common functions ***************************************

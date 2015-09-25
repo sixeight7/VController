@@ -37,10 +37,6 @@ uint8_t GR55_MIDI_port = 0;
 #define GR55_SYNTH2_SW 0x18002103 // The address of the synth1 switch
 #define GR55_COSM_GUITAR_SW 0x1800100A // The address of the COSM guitar switch
 #define GR55_NORMAL_PU_SW 0x18000232 // The address of the COSM guitar switch
-uint8_t GR55_synth1_onoff = 0;
-uint8_t GR55_synth2_onoff = 0;
-uint8_t GR55_COSM_onoff = 0;
-uint8_t GR55_nrml_pu_onoff = 0;
 bool GR55_request_onoff = false;
 uint8_t GR55_current_assign = 255; // The assign that is being read - set to a high value, because it is not time to read an assign yet.
 
@@ -109,6 +105,7 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     GR55_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
     Serial.println("GR-55 detected on MIDI port " + String(Current_MIDI_port));
     request_GR55(GR55_REQUEST_MODE); // Check for guitar or bass mode
+    request_GR55(GR55_REQUEST_PATCH_NUMBER); // Request the current patch number
     GR55_do_after_patch_selection();
   }
 }
@@ -197,6 +194,7 @@ void GR55_do_after_patch_selection() {
   GR55_request_onoff = false;
   GR55_sysex_watchdog_running = false;
   
+  GR55_on = true;
   GP10_mute();
   VG99_mute();
   GR55_request_name();
@@ -205,8 +203,8 @@ void GR55_do_after_patch_selection() {
   //if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GR55_send_bpm(); // Here is too soon, the GR55 does not pick it up - this line is moved to the Check_MIDI_in_GR55() procedure.
   update_LEDS = true;
   update_lcd = true;
-  EEPROM.write(EEPROM_GR55_PATCH_MSB, (GR55_patch_number / 256));
-  EEPROM.write(EEPROM_GR55_PATCH_LSB, (GR55_patch_number % 256));
+  //EEPROM.write(EEPROM_GR55_PATCH_MSB, (GR55_patch_number / 256));
+  //EEPROM.write(EEPROM_GR55_PATCH_LSB, (GR55_patch_number % 256));
 }
 
 void GR55_request_patch_number()
@@ -286,14 +284,15 @@ void GR55_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 }
 
 void GR55_select_switch() {
-  if (GR55_select_LED == GR55_PATCH_COLOUR) {
+  if ((GR55_on) && (!US20_emulation_state_changed)) {
     GR55_always_on_toggle();
   }
   else {
     GR55_unmute();
     GP10_mute();
     VG99_mute();
-    show_status_message(GR55_patch_name); // Show the correct patch name
+    if (mode != MODE_GP10_GR55_COMBI) show_status_message(GR55_patch_name); // Show the correct patch name
+    US20_emulation_state_changed = false;
   }
 }
 
@@ -304,12 +303,14 @@ void GR55_always_on_toggle() {
     show_status_message("GR55 always ON");
   }
   else {
-    GR55_mute();
+    //GR55_mute();
     show_status_message("GR55 can be muted");
+    US20_emulation_state_changed = true;
   }
 }
 
 void GR55_unmute() {
+  GR55_on = true;
   GR55_select_LED = GR55_PATCH_COLOUR; //Switch the LED on
   write_GR55(GR55_SYNTH1_SW, GR55_synth1_onoff); // Switch synth 1 off
   write_GR55(GR55_SYNTH2_SW, GR55_synth2_onoff); // Switch synth 1 off
@@ -318,12 +319,13 @@ void GR55_unmute() {
 }
 
 void GR55_mute() {
-  if (GR55_always_on == false) {
+  if (!GR55_always_on) {
     GR55_mute_now();
   }
 }
 
 void GR55_mute_now() { // Needed a second version, because the GR55 must always mute when engaging global tuner.
+  GR55_on = false;
   GR55_select_LED = GR55_OFF_COLOUR; //Switch the LED off
   write_GR55(GR55_SYNTH1_SW, 0x01); // Switch synth 1 off
   write_GR55(GR55_SYNTH2_SW, 0x01); // Switch synth 1 off

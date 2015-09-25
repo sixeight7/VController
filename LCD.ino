@@ -34,6 +34,7 @@
 boolean update_lcd = true;
 String GR55_patch_number_string = "U01-1";
 String VG99_patch_number_string = "U001";
+String marker = " ";
 
 #define MESSAGE_TIMER_LENGTH 1500 // time that status messages are shown (in msec)
 unsigned long messageTimer = 0;
@@ -59,7 +60,7 @@ void setup_LCD_control()
   // Switch on the backlight
   lcd.setBacklightPin(BACKLIGHT_PIN, POSITIVE);
   lcd.setBacklight(HIGH);
-  lcd.home (); // go home
+  lcd.home(); // go home
   lcd.print("V-controller v1");  // Show startup message
   show_status_message("  by SixEight");  //Please give me the credits :-)
 }
@@ -98,11 +99,11 @@ void main_LCD_control()
         lcd.print(VG99_patch_name);
         break;
       case MODE_STOMP_4:
-        lcd.print("FX select  GP-10");
+        lcd.print("Stmpbx GP10/GR55");
         lcd.setCursor (0, 1);       // go to start of 2nd line
         lcd.print("                "); //Clear the line first
         lcd.setCursor (0, 1);       // go to start of 2nd line
-        lcd.print(GP10_patch_name);
+        lcd.print("Tempo " + String(bpm) + " bpm");
         break;
 
       // *************************************** GP10 LCD modes ***************************************
@@ -155,6 +156,39 @@ void main_LCD_control()
       case MODE_VG99_DIRECTSELECT2:
         lcd.print("U" + String(VG99_bank_number / 10) + String(VG99_bank_number % 10) + "_       VG-99");
         break;
+
+      // *************************************** GP10/GR55 combi LCD modes ***************************************
+      case MODE_GP10_GR55_COMBI:
+        lcd.home ();
+        display_GR55_patch_string();
+        if (mode_GP10_GR55_combo_bank_change_on_GR55) marker = "*";
+        else marker = " ";
+        lcd.print(GR55_patch_number_string + marker + GR55_patch_name);
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+
+        if (GP10_bank_selection_active == false) {
+          if (mode_GP10_GR55_combo_bank_change_on_GR55 == false) marker = "*";
+          else marker = " ";
+          lcd.print("P" + String((GP10_patch_number + 1) / 10) + String((GP10_patch_number + 1) % 10) + marker + GP10_patch_name);
+        }
+        else {
+          uint8_t patch_temp = ((GP10_bank_number) * bank_size) + (GP10_patch_number % bank_size);
+          lcd.print("P" + String((patch_temp + 1) / 10) + String((patch_temp + 1) % 10) + "*" + GP10_patch_name);
+        }
+        break;
+
+      case MODE_MEMORIES_READ:
+        lcd.print("Memory mode     ");
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print("                "); //Clear the line first
+        break;
+
+      case MODE_MEMORIES_STORE:
+        lcd.print("Store to memory ");
+        lcd.setCursor (0, 1);       // go to start of 2nd line
+        lcd.print("(Press location)"); //Clear the line first
+        break;
+
       case MODE_COLOUR_MAKER:
         lcd.print("ColourMaker mode");
         lcd.setCursor (0, 1);       // go to start of 2nd line
@@ -162,7 +196,7 @@ void main_LCD_control()
         lcd.setCursor (0, 1);       // go to start of 2nd line
         lcd.print("R:" + String(colour_maker_red) + " G:" + String(colour_maker_green) + " B:" + String(colour_maker_blue));
         break;
-        
+
       default:
         lcd.print("Status unknown  "); // Just in case you forgot to add some status
     }

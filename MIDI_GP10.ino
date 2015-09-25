@@ -43,9 +43,8 @@
 #define GP10_FOOT_VOL 0x20020803 // The address of the footvolume - values between 0 and 100
 #define GP10_COSM_GUITAR_SW 0x20001000 // The address of the COSM guitar switch
 #define GP10_NORMAL_PU_SW 0x20000804 // The address of the COSM guitar switch
-uint8_t GP10_COSM_onoff = 0;
-uint8_t GP10_nrml_pu_onoff = 0;
 bool GP10_request_onoff = false;
+bool GP10_skip_request_guitar_switch_states = false;
 
 uint8_t GP10_MIDI_port = 0; // What port is the GP10 connected to (0 - 3)
 
@@ -109,6 +108,7 @@ void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     GP10_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     GP10_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
     Serial.println("GP-10 detected on MIDI port " + String(Current_MIDI_port));
+    request_GP10(GP10_REQUEST_PATCH_NUMBER);
     write_GP10(GP10_EDITOR_MODE_ON); // Put the GP10 in EDITOR mode - otherwise tuner will not work
     GP10_do_after_patch_selection();
   }
@@ -168,6 +168,7 @@ void GP10_SendProgramChange(uint8_t new_patch) {
 }
 
 void GP10_do_after_patch_selection() {
+  GP10_on = true;
   GR55_mute();
   VG99_mute();
   GP10_request_name();
@@ -175,8 +176,9 @@ void GP10_do_after_patch_selection() {
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GP10_send_bpm();
   update_LEDS = true;
   update_lcd = true;
-  EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
-  GP10_request_guitar_switch_states();
+  //EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
+  if (!GP10_skip_request_guitar_switch_states) GP10_request_guitar_switch_states();
+  GP10_skip_request_guitar_switch_states = false;
 }
 
 void GP10_request_patch_number()
@@ -221,14 +223,15 @@ void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 }
 
 void GP10_select_switch() {
-  if (GP10_select_LED == GP10_PATCH_COLOUR) {
+  if ((GP10_on) && (!US20_emulation_state_changed)) {
     GP10_always_on_toggle();
   }
   else {
     GP10_unmute();
     GR55_mute();
     VG99_mute();
-    show_status_message(GP10_patch_name); // Show the correct patch name
+    if (mode != MODE_GP10_GR55_COMBI) show_status_message(GP10_patch_name); // Show the correct patch name
+    US20_emulation_state_changed = false;
   }
 }
 
@@ -239,12 +242,14 @@ void GP10_always_on_toggle() {
     show_status_message("GP10 always ON");
   }
   else {
-    GP10_mute();
+    //GP10_mute();
     show_status_message("GP10 can be muted");
+    US20_emulation_state_changed = true;
   }
 }
 
 void GP10_unmute() {
+  GP10_on = true;
   GP10_select_LED = GP10_PATCH_COLOUR; //Switch the LED on
   //write_GP10(GP10_FOOT_VOL, 100); // Switching guitars does not work - the wrong values are read from the GP-10. ?????
   write_GP10(GP10_COSM_GUITAR_SW, GP10_COSM_onoff); // Switch COSM guitar on
@@ -253,6 +258,7 @@ void GP10_unmute() {
 
 void GP10_mute() {
   if (GP10_always_on == false) {
+    GP10_on = false;
     GP10_select_LED = GP10_OFF_COLOUR; //Switch the LED off
     //write_GP10(GP10_FOOT_VOL, 0);
     write_GP10(GP10_COSM_GUITAR_SW, 0x00); // Switch COSM guitar off
@@ -400,7 +406,8 @@ uint8_t GP10_stomp_LED_off_colour(uint8_t number) {
 }
 
 // Buttons to set the FX to a specific type
-uint8_t GP10_fx_type_LEDs[16]; //One LED for every fx LED (16 max)
+#define NUMBER_OF_FX_TYPE_LEDS 16
+uint8_t GP10_fx_type_LEDs[NUMBER_OF_FX_TYPE_LEDS]; //One LED for every fx LED (16 max)
 
 // GP10_fx_type_button sets the FX block of the GP-10 to the specified effect and switches it on
 // FX type numbers:
@@ -429,7 +436,7 @@ void GP10_fx_type_button(uint8_t type) {
 }
 
 void GP10_set_FX_LEDS() {
-  for (uint8_t i = 0; i < 17; i++) {
+  for (uint8_t i = 0; i < NUMBER_OF_FX_TYPE_LEDS; i++) {
     GP10_fx_type_LEDs[i] = GP10_FX_colours[i][1]; //Set the FX colours to the off-state
   }
   uint8_t type = GP10_stomps[GP10_FX_stomp].type;

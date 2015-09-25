@@ -50,8 +50,6 @@ boolean VG99_FC300_mode = false; // If the FC300 is attached, patch names will b
 
 #define VG99_COSM_GUITAR_A_SW 0x60003000 // The address of the COSM guitar switch
 #define VG99_COSM_GUITAR_B_SW 0x60003800 // The address of the COSM guitar switch
-uint8_t VG99_COSM_A_onoff = 0;
-uint8_t VG99_COSM_B_onoff = 0;
 bool VG99_request_onoff = false;
 
 //Sysex messages for FC300 in sysex mode:
@@ -286,6 +284,7 @@ void VG99_do_after_patch_selection() {
   VG99_request_onoff = false;
   VG99_sysex_watchdog_running = false;
   
+  VG99_on = true;
   GP10_mute();
   GR55_mute();
   //VG99_request_guitar_switch_states();
@@ -350,14 +349,15 @@ void VG99_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 }
 
 void VG99_select_switch() {
-  if (VG99_select_LED == VG99_PATCH_COLOUR) {
+  if ((VG99_on) && (!US20_emulation_state_changed)) {
     VG99_always_on_toggle();
   }
   else {
     VG99_unmute();
     GP10_mute();
     GR55_mute();
-    show_status_message(VG99_patch_name); // Show the correct patch name
+    if (mode != MODE_GP10_GR55_COMBI) show_status_message(VG99_patch_name); // Show the correct patch name
+    US20_emulation_state_changed = false;
   }
 }
 
@@ -368,12 +368,14 @@ void VG99_always_on_toggle() {
     show_status_message("VG99 always ON");
   }
   else {
-    VG99_mute();
+    //VG99_mute();
     show_status_message("VG99 can be muted");
+    US20_emulation_state_changed = true;
   }
 }
 
 void VG99_unmute() {
+  VG99_on = true;
   VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
   //write_VG99(VG99_COSM_GUITAR_A_SW, VG99_COSM_A_onoff); // Switch COSM guitar on
   //write_VG99(VG99_COSM_GUITAR_B_SW, VG99_COSM_B_onoff); // Switch normal pu on
@@ -382,6 +384,7 @@ void VG99_unmute() {
 
 void VG99_mute() {
   if (VG99_always_on == false) {
+    VG99_on = false;
     VG99_select_LED = VG99_OFF_COLOUR; //Switch the LED off
     write_VG99(VG99_COSM_GUITAR_A_SW, 0x00); // Switch COSM guitar off
     write_VG99(VG99_COSM_GUITAR_B_SW, 0x00); // Switch normal pu off

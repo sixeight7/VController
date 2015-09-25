@@ -114,7 +114,8 @@ unsigned long LEDflashTimer = 0;
 uint8_t LED_order[12] = { 6, 5, 4, 7, 0, 3, 8, 1, 2, 9, 10, 11}; //Order in which the LEDs are connected. First LED = 0
 
 // ************************ Settings you probably won't have to change ************************
-uint8_t *LEDs_stomp_mode_ptr[NUMBER_OF_STOMP_BANKS][9]; // array of pointers that point to the stompbox mode LEDs - set them under settings.
+#define NUMBER_OF_STOMP_MODE_LEDS 9
+uint8_t *LEDs_stomp_mode_ptr[NUMBER_OF_STOMP_BANKS][NUMBER_OF_STOMP_MODE_LEDS]; // array of pointers that point to the stompbox mode LEDs - set them under settings.
 boolean update_LEDS = true;
 boolean LED_flashing_state_on = true;
 uint8_t row_select = 0;
@@ -156,9 +157,9 @@ void main_LED_control()
       case MODE_TUNER:
         turn_all_LEDs_off();
         // Check if we came from stompbox mode and if there was a LED set to global tap tempo
-        if (previous_mode >= 20) {
-          for (uint8_t i = 0; i < 9; i++) {
-            if (LEDs_stomp_mode_ptr[previous_mode - 20][i] == &global_tap_tempo_LED) show_colour(i, GLOBAL_STOMP_COLOUR_ON); // If so switch it on
+        if (mode_before_tuning >= 20) {
+          for (uint8_t i = 0; i < NUMBER_OF_STOMP_MODE_LEDS; i++) {
+            if (LEDs_stomp_mode_ptr[mode_before_tuning - 20][i] == &global_tap_tempo_LED) show_colour(i, GLOBAL_STOMP_COLOUR_ON); // If so switch it on
           }
         }
         LEDs.show();
@@ -167,7 +168,7 @@ void main_LED_control()
       case MODE_STOMP_1:
         turn_all_LEDs_off();
         // Copy the LEDs from the LEDS_STOM_GP10 array
-        for (uint8_t count = 0; count < 9; count++) {
+        for (uint8_t count = 0; count < NUMBER_OF_STOMP_MODE_LEDS; count++) {
           show_colour(count, *LEDs_stomp_mode_ptr[0][count]);
         }
         show_colour(GP10_LED - 1, GP10_STOMP_COLOUR_ON); // And show the GP10 mode LED
@@ -176,7 +177,7 @@ void main_LED_control()
       case MODE_STOMP_2:
         turn_all_LEDs_off();
         // Copy the LEDs from the LEDS_STOM_GP10 array
-        for (uint8_t count = 0; count < 9; count++) {
+        for (uint8_t count = 0; count < NUMBER_OF_STOMP_MODE_LEDS; count++) {
           show_colour(count, *LEDs_stomp_mode_ptr[1][count]);
         }
         show_colour(GR55_LED - 1, GR55_PATCH_COLOUR); // And show the GR55 mode LED
@@ -185,7 +186,7 @@ void main_LED_control()
       case MODE_STOMP_3:
         turn_all_LEDs_off();
         // Copy the LEDs from the LEDS_STOM_GP10 array
-        for (uint8_t count = 0; count < 9; count++) {
+        for (uint8_t count = 0; count < NUMBER_OF_STOMP_MODE_LEDS; count++) {
           show_colour(count, *LEDs_stomp_mode_ptr[2][count]);
         }
         show_colour(VG99_LED - 1, VG99_PATCH_COLOUR); // And show the VG99 mode LED
@@ -194,7 +195,7 @@ void main_LED_control()
       case MODE_STOMP_4:
         turn_all_LEDs_off();
         // Copy the LEDs from the LEDS_STOM_GP10 array
-        for (uint8_t count = 0; count < 9; count++) {
+        for (uint8_t count = 0; count < NUMBER_OF_STOMP_MODE_LEDS; count++) {
           show_colour(count, *LEDs_stomp_mode_ptr[3][count]);
         }
         show_colour(GP10_LED - 1, GP10_PATCH_COLOUR); // And show the VG99 mode LED
@@ -207,7 +208,10 @@ void main_LED_control()
         turn_all_LEDs_off();
         LED_no = (GP10_patch_number % 10); // Calculate the right LED from the patchnumber
         //if (GP10_bank_number == GP10_patch_number / 10) {
-        if (GP10_bank_selection_active == false) show_colour(LED_no, GP10_PATCH_COLOUR);
+        if (GP10_bank_selection_active == false) {
+          if (GP10_on) show_colour(LED_no, GP10_PATCH_COLOUR);
+          else show_colour(LED_no, GP10_OFF_COLOUR);
+        }
         else show_colour(LED_no, GP10_PATCH_COLOUR + 100); // Set colour to flashing
         //}
         show_colour(GP10_LED - 1, GP10_PATCH_COLOUR); // And show the GP10 mode LED
@@ -243,7 +247,8 @@ void main_LED_control()
         LED_no = (GR55_patch_number % 9); // Calculate the right LED from the patchnumber
 
         if (GR55_bank_selection_active == false) {  // Normally just show the LED of the patch you selected
-          show_colour(LED_no, GR55_PATCH_COLOUR);
+          if (GR55_on) show_colour(LED_no, GR55_PATCH_COLOUR);
+          else show_colour(LED_no, GR55_OFF_COLOUR);
         }
         else {  // Flash bottom bank
           show_colour(0, GR55_PATCH_COLOUR + 100);
@@ -304,7 +309,10 @@ void main_LED_control()
         show_colour(VG99_LED - 1, VG99_PATCH_COLOUR); // Show the VG-99 mode LED
         if (VG99_bank_number == VG99_patch_number / 10) {
           LED_no = (VG99_patch_number % 10); // Calculate the right LED from the patchnumber
-          if (VG99_bank_selection_active == false) show_colour(LED_no, VG99_PATCH_COLOUR);
+          if (VG99_bank_selection_active == false) {
+            if (VG99_on) show_colour(LED_no, VG99_PATCH_COLOUR);
+            else show_colour(LED_no, VG99_OFF_COLOUR);
+          }
           else show_colour(LED_no, VG99_PATCH_COLOUR + 100); // Make it flash
         }
         LEDs.show();
@@ -331,6 +339,51 @@ void main_LED_control()
         LEDs.show();
         break;
 
+      case MODE_GP10_GR55_COMBI:
+        // Show the LED that matches the patch when you are in the right bank
+        turn_all_LEDs_off();
+        LED_no = (GP10_patch_number % 5); // Calculate the right LED from the patchnumber
+        //if (GP10_bank_number == GP10_patch_number / 10) {
+        if (GP10_bank_selection_active == false) {
+          if (GP10_on) show_colour(LED_no, GP10_PATCH_COLOUR);
+          else show_colour(LED_no, GP10_OFF_COLOUR);
+        }
+        else show_colour(LED_no, GP10_PATCH_COLOUR + 100); // Set colour to flashing
+        //}
+
+        show_colour(5, global_tap_tempo_LED); // Show tap tempo LED
+
+        LED_no = (GR55_patch_number % 6) + 6; // Calculate the right LED from the patchnumber
+
+        if (GR55_bank_selection_active == false) {  // Normally just show the LED of the patch you selected
+          if (GR55_on) show_colour(LED_no, GR55_PATCH_COLOUR);
+          else show_colour(LED_no, GR55_OFF_COLOUR);
+        }
+        else {  // Flash bottom bank
+          show_colour(6, GR55_PATCH_COLOUR + 100);
+          show_colour(7, GR55_PATCH_COLOUR + 100);
+          show_colour(8, GR55_PATCH_COLOUR + 100);
+        }
+
+        LEDs.show();
+        break;
+
+      case MODE_MEMORIES_READ:
+        turn_all_LEDs_off();
+        for (uint8_t count = 0; count < 10; count++) {
+          show_colour(count, 16);
+        }
+        show_colour(memory, 6);
+        LEDs.show();
+        break;
+        
+      case MODE_MEMORIES_STORE:
+        for (uint8_t count = 0; count < 10; count++) {
+          show_colour(count, 106);
+        }
+        LEDs.show();
+        break;
+        
       case MODE_COLOUR_MAKER:
         // Show the colour on the top 6 LEDS
         for (uint8_t i = 6; i < 12; i++) LEDs.setPixelColor(LED_order[i], LEDs.Color(colour_maker_green, colour_maker_red, colour_maker_blue));
@@ -349,8 +402,8 @@ void main_LED_control()
       default:   // Just in case you forgot to add some status - white flashing LEDs
         for (uint8_t count = 0; count < 12; count++) {
           show_colour(count, 109);
-          LEDs.show();
         }
+        LEDs.show();
     }
   }
 

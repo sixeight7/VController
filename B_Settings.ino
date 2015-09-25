@@ -61,7 +61,7 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_2_LED GP10_stomps[1].LED
 
 #define STOMP_SWITCH1_3_PRESS GP10_FX_toggle_button()
-#define STOMP_SWITCH1_3_LONG_PRESS select_mode(MODE_STOMP_4)
+#define STOMP_SWITCH1_3_LONG_PRESS nothing()
 #define STOMP_SWITCH1_3_RELEASE nothing() 
 #define STOMP_SWITCH1_3_LED GP10_FX_toggle_LED
 
@@ -85,7 +85,7 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH1_7_RELEASE nothing() 
 #define STOMP_SWITCH1_7_LED GP10_stomps[2].LED
 
-#define STOMP_SWITCH1_8_PRESS nothing()
+#define STOMP_SWITCH1_8_PRESS select_mode(MODE_GP10_GR55_COMBI)
 #define STOMP_SWITCH1_8_LONG_PRESS nothing()
 #define STOMP_SWITCH1_8_RELEASE nothing() 
 #define STOMP_SWITCH1_8_LED LEDoff
@@ -131,7 +131,7 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH2_7_RELEASE nothing() 
 #define STOMP_SWITCH2_7_LED LEDoff
 
-#define STOMP_SWITCH2_8_PRESS nothing()
+#define STOMP_SWITCH2_8_PRESS select_mode(MODE_GP10_GR55_COMBI)
 #define STOMP_SWITCH2_8_LONG_PRESS nothing()
 #define STOMP_SWITCH2_8_RELEASE nothing() 
 #define STOMP_SWITCH2_8_LED LEDoff
@@ -188,56 +188,56 @@ bool SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE = true; // If true, the tempo of all p
 #define STOMP_SWITCH3_9_LED global_tap_tempo_LED
 
 //Set functionality of the 9 buttons in stompbox mode 4 - make sure you connect both the stomp and the LED!
-#define STOMP_SWITCH4_1_PRESS GP10_fx_type_button(0) // Set GP10 FX to Distortion
+#define STOMP_SWITCH4_1_PRESS GP10_stomp(0)
 #define STOMP_SWITCH4_1_LONG_PRESS nothing()
 #define STOMP_SWITCH4_1_RELEASE nothing() 
-#define STOMP_SWITCH4_1_LED GP10_fx_type_LEDs[0]
+#define STOMP_SWITCH4_1_LED GP10_stomps[0].LED
 
-#define STOMP_SWITCH4_2_PRESS GP10_fx_type_button(4) // Set GP10 FX to T-wah
+#define STOMP_SWITCH4_2_PRESS GP10_stomp(1)
 #define STOMP_SWITCH4_2_LONG_PRESS nothing()
 #define STOMP_SWITCH4_2_RELEASE nothing() 
-#define STOMP_SWITCH4_2_LED GP10_fx_type_LEDs[4]
+#define STOMP_SWITCH4_2_LED GP10_stomps[1].LED
 
-#define STOMP_SWITCH4_3_PRESS GP10_fx_type_button(8) // Set GP10 FX to Phaser
+#define STOMP_SWITCH4_3_PRESS GP10_FX_toggle_button()
 #define STOMP_SWITCH4_3_LONG_PRESS nothing()
 #define STOMP_SWITCH4_3_RELEASE nothing() 
-#define STOMP_SWITCH4_3_LED GP10_fx_type_LEDs[8]
+#define STOMP_SWITCH4_3_LED GP10_FX_toggle_LED
 
-#define STOMP_SWITCH4_4_PRESS GP10_fx_type_button(9) // Set GP10 FX to Flanger
+#define STOMP_SWITCH4_4_PRESS GP10_stomp(3)
 #define STOMP_SWITCH4_4_LONG_PRESS nothing()
 #define STOMP_SWITCH4_4_RELEASE nothing() 
-#define STOMP_SWITCH4_4_LED GP10_fx_type_LEDs[9]
+#define STOMP_SWITCH4_4_LED GP10_stomps[3].LED
 
-#define STOMP_SWITCH4_5_PRESS GP10_fx_type_button(10) // Set GP10 FX to Tremolo
+#define STOMP_SWITCH4_5_PRESS GP10_stomp(4)
 #define STOMP_SWITCH4_5_LONG_PRESS nothing()
 #define STOMP_SWITCH4_5_RELEASE nothing() 
-#define STOMP_SWITCH4_5_LED GP10_fx_type_LEDs[10]
+#define STOMP_SWITCH4_5_LED GP10_stomps[4].LED
 
-#define STOMP_SWITCH4_6_PRESS GP10_fx_type_button(12) // Set GP10 FX to Flanger
-#define STOMP_SWITCH4_6_LONG_PRESS nothing()
+#define STOMP_SWITCH4_6_PRESS select_mode(MODE_GP10_GR55_COMBI);global_tap_tempo()
+#define STOMP_SWITCH4_6_LONG_PRESS start_global_tuner()
 #define STOMP_SWITCH4_6_RELEASE nothing() 
-#define STOMP_SWITCH4_6_LED GP10_fx_type_LEDs[12]
+#define STOMP_SWITCH4_6_LED global_tap_tempo_LED
 
-#define STOMP_SWITCH4_7_PRESS select_mode(MODE_STOMP_1)
+#define STOMP_SWITCH4_7_PRESS GR55_stomp_press(0)
 #define STOMP_SWITCH4_7_LONG_PRESS nothing()
-#define STOMP_SWITCH4_7_RELEASE nothing() 
-#define STOMP_SWITCH4_7_LED LEDoff
+#define STOMP_SWITCH4_7_RELEASE GR55_stomp_release(0)
+#define STOMP_SWITCH4_7_LED GR55_ctls[0].LED
 
-#define STOMP_SWITCH4_8_PRESS GP10_fx_type_button(13) // Set GP10 FX to UNI-V
+#define STOMP_SWITCH4_8_PRESS GR55_stomp_press(1)
 #define STOMP_SWITCH4_8_LONG_PRESS nothing()
-#define STOMP_SWITCH4_8_RELEASE nothing() 
-#define STOMP_SWITCH4_8_LED GP10_fx_type_LEDs[13]
+#define STOMP_SWITCH4_8_RELEASE GR55_stomp_release(1) 
+#define STOMP_SWITCH4_8_LED GR55_ctls[1].LED
 
-#define STOMP_SWITCH4_9_PRESS global_tap_tempo()
-#define STOMP_SWITCH4_9_LONG_PRESS start_global_tuner()
-#define STOMP_SWITCH4_9_RELEASE nothing()
-#define STOMP_SWITCH4_9_LED global_tap_tempo_LED
+#define STOMP_SWITCH4_9_PRESS GR55_stomp_press(2)
+#define STOMP_SWITCH4_9_LONG_PRESS nothing()
+#define STOMP_SWITCH4_9_RELEASE GR55_stomp_release(2)
+#define STOMP_SWITCH4_9_LED GR55_ctls[2].LED
 
 
 // ****************** SECTION 3: PATCH UP/DOWN PATCH EXTEND SETUP ******************
-// GP-10 bank extend (when using bank up/down) - set values between 0 and 9.
-#define GP10_BANK_MIN 0
-#define GP10_BANK_MAX 9
+// GP-10 patch extend (when using bank up/down) - set values between 0 and 99.
+#define GP10_PATCH_MIN 0
+#define GP10_PATCH_MAX 99
 
 // GR-55 bank extend (when using bank up/down) - set values between 0 and 99 for just the user patches and 0 and 219 for user and preset banks (guitar mode) 
 // and 0 and 135 for user and presets in bass mode. When we are in bass mode, there is a check whether we exceeded 135.
@@ -257,9 +257,11 @@ uint8_t VG99_device_id = 0x10;
 uint8_t FC300_device_id = 0x00;
 
 // Pedal can be in different modes. In each mode the buttons have different functions
-uint8_t mode = 0; // Variable mode is declared. Last state is remembered in EEPROM. If you set it to a different value than 0, the mode is overruled from EEPROM
+uint8_t mode = 11; // Variable mode is declared. Last state is remembered in EEPROM. If you set it to a different value than 0, the mode is overruled from EEPROM
 uint8_t previous_mode = 0;
+uint8_t mode_before_tuning = 0;
 uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEPROM
+uint8_t bank_size; //Variable to store the number of patches in a bank. Used for bank up/down
 
 // To make the code more readable, all the states are given a desciptive name
 #define MODE_TUNER 0
@@ -273,13 +275,16 @@ uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEP
 #define MODE_VG99_PATCH 8
 #define MODE_VG99_DIRECTSELECT1 9
 #define MODE_VG99_DIRECTSELECT2 10
-#define MODE_GENERIC1_PATCH 11           // Used for other devices  
-#define MODE_GENERIC1_DIRECTSELECT1 12
-#define MODE_GENERIC1_DIRECTSELECT2 13
-#define MODE_GENERIC2_PATCH 14           // Used for other devices  
-#define MODE_GENERIC2_DIRECTSELECT1 15
-#define MODE_GENERIC2_DIRECTSELECT2 16
-#define MODE_COLOUR_MAKER 17 // A special mode for creating new colours on the NEOpixel LEDS
+#define MODE_GP10_GR55_COMBI 11
+#define MODE_GENERIC1_PATCH 12           // Used for other devices  
+#define MODE_GENERIC1_DIRECTSELECT1 13
+#define MODE_GENERIC1_DIRECTSELECT2 14
+#define MODE_GENERIC2_PATCH 15           // Used for other devices  
+#define MODE_GENERIC2_DIRECTSELECT1 16
+#define MODE_GENERIC2_DIRECTSELECT2 17
+#define MODE_MEMORIES_READ 18
+#define MODE_MEMORIES_STORE 19
+#define MODE_COLOUR_MAKER 99 // A special mode for creating new colours on the NEOpixel LEDS
 // All modes with numbers 20 and up are freely assignable stomp banks
 #define MODE_STOMP_1 20 //Used for GP-10 stomp
 #define MODE_STOMP_2 21 //Used for GR-55 stomp
@@ -292,7 +297,10 @@ uint8_t GP10_patch_number = 0;
 uint8_t GP10_bank_number = 0;
 boolean GP10_detected = false;
 boolean GP10_bank_selection_active = false;
+bool GP10_on = true;
 bool GP10_always_on = false;
+uint8_t GP10_COSM_onoff = 0;
+uint8_t GP10_nrml_pu_onoff = 0;
 
 String GR55_patch_name = "                ";
 uint16_t GR55_patch_number = 0;
@@ -302,7 +310,15 @@ uint8_t GR55_CC01 = 0;    // the MIDI CC #01 sent by the GR-55
 boolean GR55_detected = false;
 boolean GR55_bank_selection_active = false;
 uint8_t GR55_preset_banks = 40; // Default number of preset banks is 40. When we are in bass mode, there are only 12.
+bool GR55_on = true;
 bool GR55_always_on = false;
+uint8_t GR55_synth1_onoff = 0;
+uint8_t GR55_synth2_onoff = 0;
+uint8_t GR55_COSM_onoff = 0;
+uint8_t GR55_nrml_pu_onoff = 0;
+
+boolean mode_GP10_GR55_combo_bank_change_on_GR55 = false;
+boolean US20_emulation_state_changed = false;
 
 String VG99_patch_name = "                ";
 uint16_t VG99_patch_number = 0;
@@ -311,9 +327,14 @@ uint8_t VG99_bank_number = 0;
 uint8_t VG99_CC01 = 0;    // the MIDI CC #01 sent by the GR-55
 boolean VG99_detected = false;
 boolean VG99_bank_selection_active = false;
+bool VG99_on = true;
 bool VG99_always_on = false;
+uint8_t VG99_COSM_A_onoff = 0;
+uint8_t VG99_COSM_B_onoff = 0;
 
 boolean FC300_detected = false;
+
+uint8_t memory = 0; // Last memory that has been recalled
 
 // For the colour making mode
 uint8_t colour_maker_red = 0;

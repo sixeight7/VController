@@ -93,6 +93,15 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
         case MODE_VG99_DIRECTSELECT2:
           switchcheck_MODE_VG99_DIRECTSELECT2();
           break;
+        case MODE_GP10_GR55_COMBI:
+          switchcheck_MODE_GP10_GR55_COMBI();
+          break;
+        case MODE_MEMORIES_READ:
+          switchcheck_MODE_MEMORIES_READ();
+          break;
+        case MODE_MEMORIES_STORE:
+          switchcheck_MODE_MEMORIES_STORE();
+          break;
         case MODE_COLOUR_MAKER:
           switchcheck_MODE_COLOUR_MAKER();
           break;
@@ -101,9 +110,11 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
       }
 
       // Check top switches (10, 11 and 12)
-      if ((switch_pressed == 10) && (switch10_used == false)) SWITCH10_FUNC;
-      if (switch_pressed == 11) SWITCH11_FUNC;
-      if (switch_pressed == 12) SWITCH12_FUNC;
+      if (mode != MODE_GP10_GR55_COMBI) {
+        if ((switch_pressed == 10) && (switch10_used == false)) SWITCH10_FUNC;
+        if (switch_pressed == 11) SWITCH11_FUNC;
+        if (switch_pressed == 12) SWITCH12_FUNC;
+      }
 
       // Check external switches
       if (switch_pressed == 13) EXT1_FUNC;
@@ -136,9 +147,12 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
     if (mode == MODE_STOMP_3) switchcheck_MODE_STOMPbox_long_press(3);
     if (mode == MODE_STOMP_4) switchcheck_MODE_STOMPbox_long_press(4);
 
-    if (switch_long_pressed == 10) SWITCH10_LONG_FUNC;
-    if (switch_long_pressed == 11) SWITCH11_LONG_FUNC;
-    if (switch_long_pressed == 12) SWITCH12_LONG_FUNC;
+    if (mode == MODE_GP10_GR55_COMBI) switchcheck_longpress_MODE_GP10_GR55_COMBI();
+    else {
+      if (switch_long_pressed == 10) SWITCH10_LONG_FUNC;
+      if (switch_long_pressed == 11) SWITCH11_LONG_FUNC;
+      if (switch_long_pressed == 12) SWITCH12_LONG_FUNC;
+    }
   }
 }
 
@@ -153,133 +167,237 @@ void switchcheck_MODE_TUNER()
 void switchcheck_MODE_STOMPbox(uint8_t page)
 {
   // OK, very crude, but because I use defines, there is just no other way to do this.
-  if ((page == 1) && (switch_pressed == 1)) STOMP_SWITCH1_1_PRESS;
-  if ((page == 1) && (switch_pressed == 2)) STOMP_SWITCH1_2_PRESS;
-  if ((page == 1) && (switch_pressed == 3)) STOMP_SWITCH1_3_PRESS;
-  if ((page == 1) && (switch_pressed == 4)) STOMP_SWITCH1_4_PRESS;
-  if ((page == 1) && (switch_pressed == 5)) STOMP_SWITCH1_5_PRESS;
-  if ((page == 1) && (switch_pressed == 6)) STOMP_SWITCH1_6_PRESS;
-  if ((page == 1) && (switch_pressed == 7)) STOMP_SWITCH1_7_PRESS;
-  if ((page == 1) && (switch_pressed == 8)) STOMP_SWITCH1_8_PRESS;
-  if ((page == 1) && (switch_pressed == 9)) STOMP_SWITCH1_9_PRESS;
+  if (page == 1) {
+    switch (switch_pressed) {
+      case 1:
+        STOMP_SWITCH1_1_PRESS;
+        break;
+      case 2:
+        STOMP_SWITCH1_2_PRESS;
+        break;
+      case 3:
+        STOMP_SWITCH1_3_PRESS;
+        break;
+      case 4:
+        STOMP_SWITCH1_4_PRESS;
+        break;
+      case 5:
+        STOMP_SWITCH1_5_PRESS;
+        break;
+      case 6:
+        STOMP_SWITCH1_6_PRESS;
+        break;
+      case 7:
+        STOMP_SWITCH1_7_PRESS;
+        break;
+      case 8:
+        STOMP_SWITCH1_8_PRESS;
+        break;
+      case 9:
+        STOMP_SWITCH1_9_PRESS;
+        break;
+    }
+  }
 
-  if ((page == 2) && (switch_pressed == 1)) STOMP_SWITCH2_1_PRESS;
-  if ((page == 2) && (switch_pressed == 2)) STOMP_SWITCH2_2_PRESS;
-  if ((page == 2) && (switch_pressed == 3)) STOMP_SWITCH2_3_PRESS;
-  if ((page == 2) && (switch_pressed == 4)) STOMP_SWITCH2_4_PRESS;
-  if ((page == 2) && (switch_pressed == 5)) STOMP_SWITCH2_5_PRESS;
-  if ((page == 2) && (switch_pressed == 6)) STOMP_SWITCH2_6_PRESS;
-  if ((page == 2) && (switch_pressed == 7)) STOMP_SWITCH2_7_PRESS;
-  if ((page == 2) && (switch_pressed == 8)) STOMP_SWITCH2_8_PRESS;
-  if ((page == 2) && (switch_pressed == 9)) STOMP_SWITCH2_9_PRESS;
+  if (page == 2) {
+    switch (switch_pressed) {
+      case 1:
+        STOMP_SWITCH2_1_PRESS;
+        break;
+      case 2:
+        STOMP_SWITCH2_2_PRESS;
+        break;
+      case 3:
+        STOMP_SWITCH2_3_PRESS;
+        break;
+      case 4:
+        STOMP_SWITCH2_4_PRESS;
+        break;
+      case 5:
+        STOMP_SWITCH2_5_PRESS;
+        break;
+      case 6:
+        STOMP_SWITCH2_6_PRESS;
+        break;
+      case 7:
+        STOMP_SWITCH2_7_PRESS;
+        break;
+      case 8:
+        STOMP_SWITCH2_8_PRESS;
+        break;
+      case 9:
+        STOMP_SWITCH2_9_PRESS;
+        break;
+    }
+  }
 
-  if ((page == 3) && (switch_pressed == 1)) STOMP_SWITCH3_1_PRESS;
-  if ((page == 3) && (switch_pressed == 2)) STOMP_SWITCH3_2_PRESS;
-  if ((page == 3) && (switch_pressed == 3)) STOMP_SWITCH3_3_PRESS;
-  if ((page == 3) && (switch_pressed == 4)) STOMP_SWITCH3_4_PRESS;
-  if ((page == 3) && (switch_pressed == 5)) STOMP_SWITCH3_5_PRESS;
-  if ((page == 3) && (switch_pressed == 6)) STOMP_SWITCH3_6_PRESS;
-  if ((page == 3) && (switch_pressed == 7)) STOMP_SWITCH3_7_PRESS;
-  if ((page == 3) && (switch_pressed == 8)) STOMP_SWITCH3_8_PRESS;
-  if ((page == 3) && (switch_pressed == 9)) STOMP_SWITCH3_9_PRESS;
+  if (page == 3) {
+    switch (switch_pressed) {
+      case 1:
+        STOMP_SWITCH3_1_PRESS;
+        break;
+      case 2:
+        STOMP_SWITCH3_2_PRESS;
+        break;
+      case 3:
+        STOMP_SWITCH3_3_PRESS;
+        break;
+      case 4:
+        STOMP_SWITCH3_4_PRESS;
+        break;
+      case 5:
+        STOMP_SWITCH3_5_PRESS;
+        break;
+      case 6:
+        STOMP_SWITCH3_6_PRESS;
+        break;
+      case 7:
+        STOMP_SWITCH3_7_PRESS;
+        break;
+      case 8:
+        STOMP_SWITCH3_8_PRESS;
+        break;
+      case 9:
+        STOMP_SWITCH3_9_PRESS;
+        break;
+    }
+  }
 
-  if ((page == 4) && (switch_pressed == 1)) STOMP_SWITCH4_1_PRESS;
-  if ((page == 4) && (switch_pressed == 2)) STOMP_SWITCH4_2_PRESS;
-  if ((page == 4) && (switch_pressed == 3)) STOMP_SWITCH4_3_PRESS;
-  if ((page == 4) && (switch_pressed == 4)) STOMP_SWITCH4_4_PRESS;
-  if ((page == 4) && (switch_pressed == 5)) STOMP_SWITCH4_5_PRESS;
-  if ((page == 4) && (switch_pressed == 6)) STOMP_SWITCH4_6_PRESS;
-  if ((page == 4) && (switch_pressed == 7)) STOMP_SWITCH4_7_PRESS;
-  if ((page == 4) && (switch_pressed == 8)) STOMP_SWITCH4_8_PRESS;
-  if ((page == 4) && (switch_pressed == 9)) STOMP_SWITCH4_9_PRESS;
+  if (page == 4) {
+    switch (switch_pressed) {
+      case 1:
+        STOMP_SWITCH4_1_PRESS;
+        break;
+      case 2:
+        STOMP_SWITCH4_2_PRESS;
+        break;
+      case 3:
+        STOMP_SWITCH4_3_PRESS;
+        break;
+      case 4:
+        STOMP_SWITCH4_4_PRESS;
+        break;
+      case 5:
+        STOMP_SWITCH4_5_PRESS;
+        break;
+      case 6:
+        STOMP_SWITCH4_6_PRESS;
+        break;
+      case 7:
+        STOMP_SWITCH4_7_PRESS;
+        break;
+      case 8:
+        STOMP_SWITCH4_8_PRESS;
+        break;
+      case 9:
+        STOMP_SWITCH4_9_PRESS;
+        break;
+    }
+  }
 }
 
 void switchcheck_MODE_STOMPbox_long_press(uint8_t page)
 {
   // OK, very crude, but because I use defines, there is just no other way to do this.
-  if ((page == 1) && (switch_long_pressed == 1)) STOMP_SWITCH1_1_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 2)) STOMP_SWITCH1_2_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 3)) STOMP_SWITCH1_3_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 4)) STOMP_SWITCH1_4_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 5)) STOMP_SWITCH1_5_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 6)) STOMP_SWITCH1_6_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 7)) STOMP_SWITCH1_7_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 8)) STOMP_SWITCH1_8_LONG_PRESS;
-  if ((page == 1) && (switch_long_pressed == 9)) STOMP_SWITCH1_9_LONG_PRESS;
+  if (page == 1) {
+    if (switch_long_pressed == 1) STOMP_SWITCH1_1_LONG_PRESS;
+    if (switch_long_pressed == 2) STOMP_SWITCH1_2_LONG_PRESS;
+    if (switch_long_pressed == 3) STOMP_SWITCH1_3_LONG_PRESS;
+    if (switch_long_pressed == 4) STOMP_SWITCH1_4_LONG_PRESS;
+    if (switch_long_pressed == 5) STOMP_SWITCH1_5_LONG_PRESS;
+    if (switch_long_pressed == 6) STOMP_SWITCH1_6_LONG_PRESS;
+    if (switch_long_pressed == 7) STOMP_SWITCH1_7_LONG_PRESS;
+    if (switch_long_pressed == 8) STOMP_SWITCH1_8_LONG_PRESS;
+    if (switch_long_pressed == 9) STOMP_SWITCH1_9_LONG_PRESS;
+  }
 
-  if ((page == 2) && (switch_long_pressed == 1)) STOMP_SWITCH2_1_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 2)) STOMP_SWITCH2_2_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 3)) STOMP_SWITCH2_3_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 4)) STOMP_SWITCH2_4_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 5)) STOMP_SWITCH2_5_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 6)) STOMP_SWITCH2_6_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 7)) STOMP_SWITCH2_7_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 8)) STOMP_SWITCH2_8_LONG_PRESS;
-  if ((page == 2) && (switch_long_pressed == 9)) STOMP_SWITCH2_9_LONG_PRESS;
+  if (page == 2) {
+    if (switch_long_pressed == 1) STOMP_SWITCH2_1_LONG_PRESS;
+    if (switch_long_pressed == 2) STOMP_SWITCH2_2_LONG_PRESS;
+    if (switch_long_pressed == 3) STOMP_SWITCH2_3_LONG_PRESS;
+    if (switch_long_pressed == 4) STOMP_SWITCH2_4_LONG_PRESS;
+    if (switch_long_pressed == 5) STOMP_SWITCH2_5_LONG_PRESS;
+    if (switch_long_pressed == 6) STOMP_SWITCH2_6_LONG_PRESS;
+    if (switch_long_pressed == 7) STOMP_SWITCH2_7_LONG_PRESS;
+    if (switch_long_pressed == 8) STOMP_SWITCH2_8_LONG_PRESS;
+    if (switch_long_pressed == 9) STOMP_SWITCH2_9_LONG_PRESS;
+  }
 
-  if ((page == 3) && (switch_long_pressed == 1)) STOMP_SWITCH3_1_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 2)) STOMP_SWITCH3_2_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 3)) STOMP_SWITCH3_3_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 4)) STOMP_SWITCH3_4_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 5)) STOMP_SWITCH3_5_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 6)) STOMP_SWITCH3_6_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 7)) STOMP_SWITCH3_7_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 8)) STOMP_SWITCH3_8_LONG_PRESS;
-  if ((page == 3) && (switch_long_pressed == 9)) STOMP_SWITCH3_9_LONG_PRESS;
+  if (page == 3) {
+    if (switch_long_pressed == 1) STOMP_SWITCH3_1_LONG_PRESS;
+    if (switch_long_pressed == 2) STOMP_SWITCH3_2_LONG_PRESS;
+    if (switch_long_pressed == 3) STOMP_SWITCH3_3_LONG_PRESS;
+    if (switch_long_pressed == 4) STOMP_SWITCH3_4_LONG_PRESS;
+    if (switch_long_pressed == 5) STOMP_SWITCH3_5_LONG_PRESS;
+    if (switch_long_pressed == 6) STOMP_SWITCH3_6_LONG_PRESS;
+    if (switch_long_pressed == 7) STOMP_SWITCH3_7_LONG_PRESS;
+    if (switch_long_pressed == 8) STOMP_SWITCH3_8_LONG_PRESS;
+    if (switch_long_pressed == 9) STOMP_SWITCH3_9_LONG_PRESS;
+  }
 
-  if ((page == 4) && (switch_long_pressed == 1)) STOMP_SWITCH4_1_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 2)) STOMP_SWITCH4_2_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 3)) STOMP_SWITCH4_3_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 4)) STOMP_SWITCH4_4_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 5)) STOMP_SWITCH4_5_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 6)) STOMP_SWITCH4_6_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 7)) STOMP_SWITCH4_7_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 8)) STOMP_SWITCH4_8_LONG_PRESS;
-  if ((page == 4) && (switch_long_pressed == 9)) STOMP_SWITCH4_9_LONG_PRESS;
+  if (page == 4) {
+    if (switch_long_pressed == 1) STOMP_SWITCH4_1_LONG_PRESS;
+    if (switch_long_pressed == 2) STOMP_SWITCH4_2_LONG_PRESS;
+    if (switch_long_pressed == 3) STOMP_SWITCH4_3_LONG_PRESS;
+    if (switch_long_pressed == 4) STOMP_SWITCH4_4_LONG_PRESS;
+    if (switch_long_pressed == 5) STOMP_SWITCH4_5_LONG_PRESS;
+    if (switch_long_pressed == 6) STOMP_SWITCH4_6_LONG_PRESS;
+    if (switch_long_pressed == 7) STOMP_SWITCH4_7_LONG_PRESS;
+    if (switch_long_pressed == 8) STOMP_SWITCH4_8_LONG_PRESS;
+    if (switch_long_pressed == 9) STOMP_SWITCH4_9_LONG_PRESS;
+  }
 }
 
 void switchcheck_MODE_STOMPbox_release(uint8_t page)
 {
   // OK, very crude, but because I use defines, there is just no other way to do this.
-  if ((page == 1) && (switch_released == 1)) STOMP_SWITCH1_1_RELEASE;
-  if ((page == 1) && (switch_released == 2)) STOMP_SWITCH1_2_RELEASE;
-  if ((page == 1) && (switch_released == 3)) STOMP_SWITCH1_3_RELEASE;
-  if ((page == 1) && (switch_released == 4)) STOMP_SWITCH1_4_RELEASE;
-  if ((page == 1) && (switch_released == 5)) STOMP_SWITCH1_5_RELEASE;
-  if ((page == 1) && (switch_released == 6)) STOMP_SWITCH1_6_RELEASE;
-  if ((page == 1) && (switch_released == 7)) STOMP_SWITCH1_7_RELEASE;
-  if ((page == 1) && (switch_released == 8)) STOMP_SWITCH1_8_RELEASE;
-  if ((page == 1) && (switch_released == 9)) STOMP_SWITCH1_9_RELEASE;
+  if (page == 1) {
+    if (switch_released == 1) STOMP_SWITCH1_1_RELEASE;
+    if (switch_released == 2) STOMP_SWITCH1_2_RELEASE;
+    if (switch_released == 3) STOMP_SWITCH1_3_RELEASE;
+    if (switch_released == 4) STOMP_SWITCH1_4_RELEASE;
+    if (switch_released == 5) STOMP_SWITCH1_5_RELEASE;
+    if (switch_released == 6) STOMP_SWITCH1_6_RELEASE;
+    if (switch_released == 7) STOMP_SWITCH1_7_RELEASE;
+    if (switch_released == 8) STOMP_SWITCH1_8_RELEASE;
+    if (switch_released == 9) STOMP_SWITCH1_9_RELEASE;
+  }
 
-  if ((page == 2) && (switch_released == 1)) STOMP_SWITCH2_1_RELEASE;
-  if ((page == 2) && (switch_released == 2)) STOMP_SWITCH2_2_RELEASE;
-  if ((page == 2) && (switch_released == 3)) STOMP_SWITCH2_3_RELEASE;
-  if ((page == 2) && (switch_released == 4)) STOMP_SWITCH2_4_RELEASE;
-  if ((page == 2) && (switch_released == 5)) STOMP_SWITCH2_5_RELEASE;
-  if ((page == 2) && (switch_released == 6)) STOMP_SWITCH2_6_RELEASE;
-  if ((page == 2) && (switch_released == 7)) STOMP_SWITCH2_7_RELEASE;
-  if ((page == 2) && (switch_released == 8)) STOMP_SWITCH2_8_RELEASE;
-  if ((page == 2) && (switch_released == 9)) STOMP_SWITCH2_9_RELEASE;
+  if (page == 2) {
+    if (switch_released == 1) STOMP_SWITCH2_1_RELEASE;
+    if (switch_released == 2) STOMP_SWITCH2_2_RELEASE;
+    if (switch_released == 3) STOMP_SWITCH2_3_RELEASE;
+    if (switch_released == 4) STOMP_SWITCH2_4_RELEASE;
+    if (switch_released == 5) STOMP_SWITCH2_5_RELEASE;
+    if (switch_released == 6) STOMP_SWITCH2_6_RELEASE;
+    if (switch_released == 7) STOMP_SWITCH2_7_RELEASE;
+    if (switch_released == 8) STOMP_SWITCH2_8_RELEASE;
+    if (switch_released == 9) STOMP_SWITCH2_9_RELEASE;
+  }
 
-  if ((page == 3) && (switch_released == 1)) STOMP_SWITCH3_1_RELEASE;
-  if ((page == 3) && (switch_released == 2)) STOMP_SWITCH3_2_RELEASE;
-  if ((page == 3) && (switch_released == 3)) STOMP_SWITCH3_3_RELEASE;
-  if ((page == 3) && (switch_released == 4)) STOMP_SWITCH3_4_RELEASE;
-  if ((page == 3) && (switch_released == 5)) STOMP_SWITCH3_5_RELEASE;
-  if ((page == 3) && (switch_released == 6)) STOMP_SWITCH3_6_RELEASE;
-  if ((page == 3) && (switch_released == 7)) STOMP_SWITCH3_7_RELEASE;
-  if ((page == 3) && (switch_released == 8)) STOMP_SWITCH3_8_RELEASE;
-  if ((page == 3) && (switch_released == 9)) STOMP_SWITCH3_9_RELEASE;
+  if (page == 3) {
+    if (switch_released == 1) STOMP_SWITCH3_1_RELEASE;
+    if (switch_released == 2) STOMP_SWITCH3_2_RELEASE;
+    if (switch_released == 3) STOMP_SWITCH3_3_RELEASE;
+    if (switch_released == 4) STOMP_SWITCH3_4_RELEASE;
+    if (switch_released == 5) STOMP_SWITCH3_5_RELEASE;
+    if (switch_released == 6) STOMP_SWITCH3_6_RELEASE;
+    if (switch_released == 7) STOMP_SWITCH3_7_RELEASE;
+    if (switch_released == 8) STOMP_SWITCH3_8_RELEASE;
+    if (switch_released == 9) STOMP_SWITCH3_9_RELEASE;
+  }
 
-  if ((page == 4) && (switch_released == 1)) STOMP_SWITCH4_1_RELEASE;
-  if ((page == 4) && (switch_released == 2)) STOMP_SWITCH4_2_RELEASE;
-  if ((page == 4) && (switch_released == 3)) STOMP_SWITCH4_3_RELEASE;
-  if ((page == 4) && (switch_released == 4)) STOMP_SWITCH4_4_RELEASE;
-  if ((page == 4) && (switch_released == 5)) STOMP_SWITCH4_5_RELEASE;
-  if ((page == 4) && (switch_released == 6)) STOMP_SWITCH4_6_RELEASE;
-  if ((page == 4) && (switch_released == 7)) STOMP_SWITCH4_7_RELEASE;
-  if ((page == 4) && (switch_released == 8)) STOMP_SWITCH4_8_RELEASE;
-  if ((page == 4) && (switch_released == 9)) STOMP_SWITCH4_9_RELEASE;
+  if (page == 4) {
+    if (switch_released == 1) STOMP_SWITCH4_1_RELEASE;
+    if (switch_released == 2) STOMP_SWITCH4_2_RELEASE;
+    if (switch_released == 3) STOMP_SWITCH4_3_RELEASE;
+    if (switch_released == 4) STOMP_SWITCH4_4_RELEASE;
+    if (switch_released == 5) STOMP_SWITCH4_5_RELEASE;
+    if (switch_released == 6) STOMP_SWITCH4_6_RELEASE;
+    if (switch_released == 7) STOMP_SWITCH4_7_RELEASE;
+    if (switch_released == 8) STOMP_SWITCH4_8_RELEASE;
+    if (switch_released == 9) STOMP_SWITCH4_9_RELEASE;
+  }
 }
 
 // Mode 2: GP10 patch mode - select the patch in the current bank
@@ -288,7 +406,8 @@ void switchcheck_MODE_GP10_PATCH()
   if (switch_pressed < 10) {
     if (GP10_bank_selection_active == false) GP10_bank_number = (GP10_patch_number / 10); //Reset the bank to current patch
     uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed - 1);
-    GP10_SendProgramChange(new_patch);
+    if (new_patch == GP10_patch_number) GP10_select_switch();
+    else GP10_SendProgramChange(new_patch);
     GP10_bank_selection_active = false;
   }
 }
@@ -308,11 +427,12 @@ void switchcheck_MODE_GP10_DIRECTSELECT1()
 void switchcheck_MODE_GP10_DIRECTSELECT2()
 {
   if (switch_pressed <= 10) {
-    select_mode(MODE_GP10_PATCH);
+    select_mode(previous_mode);
     uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed % 10) - 1; // switch_pressed % 10 makes buton 10 zero
     if (new_patch == 255) new_patch = 0;
     switch10_used = true;
-    GP10_SendProgramChange(new_patch);
+    if (new_patch == GP10_patch_number) GP10_select_switch();
+    else GP10_SendProgramChange(new_patch);
   }
 
 }
@@ -323,7 +443,8 @@ void switchcheck_MODE_GR55_PATCH()
   if (switch_pressed < 10) {
     if (GR55_bank_selection_active == false) GR55_bank_number = ((GR55_patch_number / 9) * 3); // Reset the bank to current patch - bank needs update, so the VController never jumps to other banks
     uint16_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 1);
-    GR55_SendProgramChange(new_patch);
+    if (new_patch == GR55_patch_number) GR55_select_switch();
+    else GR55_SendProgramChange(new_patch);
     GR55_bank_selection_active = false;
   }
 }
@@ -354,8 +475,9 @@ void switchcheck_MODE_GR55_DIRECTSELECT3()
 {
   if (switch_pressed <= 10) {
     uint16_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
-    GR55_SendProgramChange(new_patch);
-    select_mode(MODE_GR55_PATCH);
+    if (new_patch == GR55_patch_number) GR55_select_switch();
+    else GR55_SendProgramChange(new_patch);
+    select_mode(previous_mode);
     switch10_used = true;
   }
 }
@@ -366,7 +488,8 @@ void switchcheck_MODE_VG99_PATCH()
   if (switch_pressed < 10) {
     if (VG99_bank_selection_active == false) VG99_bank_number = (VG99_patch_number / 10); //Reset the bank to current patch
     uint16_t new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
-    VG99_SendPatchChange(new_patch);
+    if (new_patch == VG99_patch_number) VG99_select_switch();
+    else VG99_SendPatchChange(new_patch);
     VG99_bank_selection_active = false;
   }
 }
@@ -400,23 +523,102 @@ void switchcheck_MODE_VG99_DIRECTSELECT2() {
     VG99_SendPatchChange(new_patch);
   }
   if (switch_pressed == 10) {
-    select_mode(MODE_VG99_PATCH);
+    select_mode(previous_mode);
     if (VG99_bank_number > 0) new_patch = (VG99_bank_number) * 10 - 1;
     else new_patch = 0;
     VG99_bank_number = VG99_bank_number - 1;
-    VG99_SendPatchChange(new_patch);
+    if (new_patch == VG99_patch_number) VG99_select_switch();
+    else VG99_SendPatchChange(new_patch);
     switch10_used = true;
   }
 }
 
-void select_mode(uint8_t new_mode) {
-  mode = new_mode;
-  EEPROM.write(EEPROM_mode, mode);
+// Mode 12: MODE_GP10_GR55_COMBI
+void switchcheck_MODE_GP10_GR55_COMBI() {
+
+  if (switch_pressed <= 5) { //Button 1 to 5 are GP10 patch select
+    if (GP10_bank_selection_active == false) GP10_bank_number = (GP10_patch_number / 5); //Reset the bank to current patch
+    uint8_t new_patch = (GP10_bank_number) * 5 + (switch_pressed - 1);
+    if (new_patch == GP10_patch_number) GP10_select_switch();
+    else GP10_SendProgramChange(new_patch);
+    GP10_bank_selection_active = false;
+    GR55_bank_selection_active = false;
+    mode_GP10_GR55_combo_bank_change_on_GR55 = false; // So bank up/down will change the bank of the GP10
+  }
+
+  if (switch_pressed == 6) {
+    select_mode(MODE_STOMP_4);
+    mode_GP10_GR55_combo_bank_change_on_GR55 = !mode_GP10_GR55_combo_bank_change_on_GR55;
+    global_tap_tempo(); // Button 6 is tap tempo
+  }
+
+  if ((switch_pressed >= 7) && (switch_pressed <= 12)) { // Button 7 - 12 is patch select on GR55
+    if (GR55_bank_selection_active == false) GR55_bank_number = ((GR55_patch_number / 6) * 2); // Reset the bank to current patch - bank needs update, so the VController never jumps to other banks
+    uint16_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 7);
+    //show_status_message("bank:"+String(GR55_bank_number) + " patch:"+String(new_patch));
+    if (new_patch == GR55_patch_number) GR55_select_switch();
+    else GR55_SendProgramChange(new_patch);
+    GP10_bank_selection_active = false;
+    GR55_bank_selection_active = false;
+    mode_GP10_GR55_combo_bank_change_on_GR55 = true; // So bank up/down will change the bank of the GR55
+  }
 }
 
-void toggle_mode(uint8_t mode1, uint8_t mode2) {
-  if (mode == mode1) select_mode(mode2);
-  else select_mode(mode1);
+void switchcheck_longpress_MODE_GP10_GR55_COMBI() {
+  if (switch_long_pressed <= 5) {
+    select_mode(MODE_GP10_DIRECTSELECT1);
+    if ((switch_long_pressed - 1) == (GP10_patch_number % 5)) GP10_select_switch();
+  }
+
+  if (switch_long_pressed == 6) {
+    start_global_tuner();
+  }
+
+  if ((switch_long_pressed >= 7) && (switch_long_pressed <= 12)) {
+    select_mode(MODE_GR55_DIRECTSELECT1);
+    if ((GR55_bank_number * 3) + (switch_long_pressed - 7) == GR55_patch_number) GR55_select_switch();
+  }
+
+  if (switch_long_pressed == 13) {
+    GP10_bank_selection_active = false;
+    GR55_bank_selection_active = false;
+    select_mode(MODE_MEMORIES_READ);
+  }
+
+  if (switch_long_pressed == 14) {
+    GP10_bank_selection_active = false;
+    GR55_bank_selection_active = false;
+    select_mode(MODE_MEMORIES_STORE);
+  }
+}
+
+void switchcheck_MODE_MEMORIES_READ() {
+  if (switch_pressed <= 10) {
+    memory = (switch_pressed - 1);
+    read_memory(switch_pressed - 1);
+    // First send patch change to devices that were off when memory was stored
+    /*
+    if ((GP10_detected) && (!GP10_on)) {
+      GP10_skip_request_guitar_switch_states = true; // Skip the requests once...
+      GP10_SendProgramChange(GP10_patch_number);
+    }
+    if ((GR55_detected) && (!GR55_on)) GR55_SendProgramChange(GR55_patch_number);
+    if ((VG99_detected) && (!VG99_on)) VG99_SendPatchChange(VG99_patch_number);
+    */
+    
+    // Then send patch changes for devices that were on when memory was stored - this will switch off the previous ones
+    if ((GP10_detected) && (GP10_on)) GP10_SendProgramChange(GP10_patch_number);
+    if ((GR55_detected) && (GR55_on)) GR55_SendProgramChange(GR55_patch_number);
+    if ((VG99_detected) && (VG99_on)) VG99_SendPatchChange(VG99_patch_number);
+  }
+  select_mode(previous_mode);
+}
+
+void switchcheck_MODE_MEMORIES_STORE() {
+  if (switch_pressed <= 10) {
+    store_memory(switch_pressed - 1);
+  }
+  select_mode(previous_mode);
 }
 
 void switchcheck_MODE_COLOUR_MAKER() {
@@ -461,7 +663,7 @@ void init_LED_pointers() {
   LEDs_stomp_mode_ptr[2][6] = &STOMP_SWITCH3_7_LED;
   LEDs_stomp_mode_ptr[2][7] = &STOMP_SWITCH3_8_LED;
   LEDs_stomp_mode_ptr[2][8] = &STOMP_SWITCH3_9_LED;
-  
+
   LEDs_stomp_mode_ptr[3][0] = &STOMP_SWITCH4_1_LED;
   LEDs_stomp_mode_ptr[3][1] = &STOMP_SWITCH4_2_LED;
   LEDs_stomp_mode_ptr[3][2] = &STOMP_SWITCH4_3_LED;
