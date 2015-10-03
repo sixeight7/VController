@@ -121,15 +121,15 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
       if (address == 0x0000) { // Request for address 0x0000
         VG99_FC300_mode = true; //We are in FC300 mode!!!
         write_VG99fc(0x0000, 0x01, 0x00, 0x00); // Answer with three numbers - 01 00 00
-        Serial.println("VG99 request for address 0x0000 answered");
+        DEBUGMSG("VG99 request for address 0x0000 answered");
       }
       if (address == 0x0400) { // Request for address 0x0400
         //write_VG99fc(0x0400, 0x03); // Answer with one number - 03
-        Serial.println("VG99 request for address 0x0400 answered");
+        DEBUGMSG("VG99 request for address 0x0400 answered");
       }
       if (address == 0x0600) { // Request for address 0x0600
         write_VG99fc(0x0600, 0x10, 0x02, 0x08); // Answer with three numbers - 10 02 08
-        Serial.println("VG99 request for address 0x0600 answered");
+        DEBUGMSG("VG99 request for address 0x0600 answered");
         VG99_fix_reverse_pedals();
       }
     }
@@ -151,7 +151,7 @@ void check_PC_in_VG99(byte channel, byte program) {
     if (VG99_patch_number != (VG99_CC01 * 100) + program) {
       VG99_patch_number = (VG99_CC01 * 100) + program;
       VG99_do_after_patch_selection();
-      Serial.println("Receive PC (VG99):" + String(VG99_patch_number));
+      DEBUGMSG("Receive PC (VG99):" + String(VG99_patch_number));
     }
   }
 }
@@ -164,7 +164,7 @@ void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     //show_status_message("VG-99 detected  ");
     VG99_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     VG99_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
-    Serial.println("VG-99 detected on MIDI port " + String(Current_MIDI_port));
+    DEBUGMSG("VG-99 detected on MIDI port " + String(Current_MIDI_port));
     //write_VG99(VG99_EDITOR_MODE_ON); // Put the VG-99 into editor mode - saves lots of messages on the VG99 display, but also overloads the buffer
     //write_VG99fc(FC300_SYSEX_MODE); // Wakes up the VG99 to the FC300
     VG99_do_after_patch_selection();
@@ -181,7 +181,7 @@ void write_VG99(uint32_t address, uint8_t value) // For sending one data byte
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99)");
 }
 
@@ -193,7 +193,7 @@ void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(VG99)");
 }
 
@@ -205,7 +205,7 @@ void write_VG99fc(uint16_t address, uint8_t value) // VG99 writing to the FC300
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(12, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(11, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(11, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(11, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(VG99fc)");
 }
 
@@ -217,7 +217,7 @@ void write_VG99fc(uint16_t address, uint8_t value1, uint8_t value2, uint8_t valu
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99fc)");
 }
 
@@ -228,7 +228,7 @@ void write_VG99rrc(uint8_t address, uint8_t value) // VG99 writing to the FC300 
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(11, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(10, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(10, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(10, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(10, sysexmessage);
   debug_sysex(sysexmessage, 11, "out(VG99rrc)");
 }
 
@@ -240,7 +240,7 @@ void request_VG99(uint32_t address, uint8_t no_of_bytes)
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(17, sysexmessage);
   if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(16, sysexmessage);
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
-  if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(16, sysexmessage);
+  if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(VG99)");
 }
 
@@ -252,7 +252,7 @@ void VG99_request_name()
 void VG99_SendPatchChange(uint16_t new_patch) {
   //if (new_patch == VG99_patch_number) VG99_unmute();
   VG99_patch_number = new_patch;
-  Serial.println("Send Patch Change (VG99):" + String(VG99_patch_number));
+  DEBUGMSG("Send Patch Change (VG99):" + String(VG99_patch_number));
   //write_VG99fc(FC300_NORMAL_MODE);
   VG99_SendProgramChange();
   //write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
@@ -307,7 +307,7 @@ void VG99_TAP_TEMPO_LED_ON() {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
-    if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
   }
 }
 
@@ -316,7 +316,7 @@ void VG99_TAP_TEMPO_LED_OFF() {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
-    if (VG99_MIDI_port == MIDI3_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
+    if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
   }
 }
 // ********************************* Section 4: VG99 controller functions ***********************************************
@@ -445,7 +445,7 @@ void FC300_stomp_press(uint8_t number) {
 
   // Press the FC300 pedal via sysex
   write_VG99fc(FC300_ctls[number].address, 0x7F);
-  //Serial.println("You pressed: "+String(number));
+  //DEBUGMSG("You pressed: "+String(number));
   // Toggle LED status
   if (FC300_ctls[number].LED == FC300_ctls[number].colour_on) FC300_ctls[number].LED = FC300_ctls[number].colour_off;
   else FC300_ctls[number].LED = FC300_ctls[number].colour_on;
@@ -492,14 +492,14 @@ void VG99_fix_reverse_pedals() {
 
 void Request_FC300_CTL_first_assign() {
   VG99_current_assign = 0; //After the name is read, the assigns can be read
-  Serial.println("Start reading FC300 CTL assigns");
+  DEBUGMSG("Start reading FC300 CTL assigns");
   VG99_set_sysex_watchdog();
   Request_FC300_CTL_current_assign();
 }
 
 void Request_FC300_CTL_current_assign() { //Will request the next assign - the assigns are read one by one, otherwise the data will not arrive!
   if (VG99_current_assign < FC300_NUMBER_OF_CTLS) {
-    Serial.println("Request VG99_current_assign=" + String(VG99_current_assign));
+    DEBUGMSG("Request VG99_current_assign=" + String(VG99_current_assign));
     request_VG99(FC300_ctls[VG99_current_assign].assign_addr, 8); // Request 8 bytes for the assign
     VG99_set_sysex_watchdog(); // Set the timer
   }
@@ -512,12 +512,12 @@ void Request_FC300_CTL_current_assign() { //Will request the next assign - the a
 void VG99_set_sysex_watchdog() {
   VG99sysexWatchdog = millis() + VG99_SYSEX_WATCHDOG_LENGTH;
   VG99_sysex_watchdog_running = true;
-  Serial.println("VG99 sysex watchdog started");
+  DEBUGMSG("VG99 sysex watchdog started");
 }
 
 void VG99_check_sysex_watchdog() {
   if ((millis() > VG99sysexWatchdog) && (VG99_sysex_watchdog_running)) {
-    Serial.println("VG99 sysex watchdog expired");
+    DEBUGMSG("VG99 sysex watchdog expired");
     Request_FC300_CTL_current_assign(); // Try reading the assign again
   }
 }
@@ -528,7 +528,7 @@ void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxle
   if (VG99_current_assign < FC300_NUMBER_OF_CTLS) { // Check if we have not reached the last assign.
     // Check if it is the CTL assign address
     if ((sxdata[6] == 0x12) && (address == FC300_ctls[VG99_current_assign].assign_addr)) {
-      //Serial.println("Received VG99_current_assign=" + String(VG99_current_assign));
+      //DEBUGMSG("Received VG99_current_assign=" + String(VG99_current_assign));
       // Copy the data into the FC300 assign array
       FC300_ctls[VG99_current_assign].assign_on = (sxdata[11] == 0x01);
       FC300_ctls[VG99_current_assign].assign_target = (sxdata[12] * 256) + sxdata[13];
@@ -536,19 +536,19 @@ void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxle
       FC300_ctls[VG99_current_assign].assign_max = (sxdata[16] * 256) + sxdata[17];
       FC300_ctls[VG99_current_assign].assign_latch = (sxdata[18] == 0x01);
 
-      //Serial.println("Assign_on:" + String(FC300_ctls[VG99_current_assign].assign_on));
-      //Serial.println("Assign_target:" + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
+      //DEBUGMSG("Assign_on:" + String(FC300_ctls[VG99_current_assign].assign_on));
+      //DEBUGMSG("Assign_target:" + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
 
       //Request the status of the target from the patch temporary area is assignment is on
       if (FC300_ctls[VG99_current_assign].assign_on == true) {
-        Serial.println("Request target of assign " + String(VG99_current_assign) + ": " + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
+        DEBUGMSG("Request target of assign " + String(VG99_current_assign) + ": " + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
         request_VG99((0x60000000 + FC300_ctls[VG99_current_assign].assign_target), 2);
       }
       else {
         FC300_ctls[VG99_current_assign].LED = 0; // Switch the LED off
         FC300_ctls[VG99_current_assign].colour_on = VG99_STOMP_COLOUR_ON; // Set the on colour to default
         FC300_ctls[VG99_current_assign].colour_off = 0; // Set the off colour to LED off
-        //Serial.println("Current LED off for VG99_current_assign=" + String(VG99_current_assign));
+        //DEBUGMSG("Current LED off for VG99_current_assign=" + String(VG99_current_assign));
         VG99_current_assign++; // Select the next assign
         Request_FC300_CTL_current_assign(); //Request the next assign
       }
@@ -559,7 +559,7 @@ void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxle
     uint32_t requested_address = 0x60000000 + FC300_ctls[VG99_current_assign].assign_target;
     if ((sxdata[6] == 0x12) && (address == requested_address) && (FC300_ctls[VG99_current_assign].assign_target != 0)) {
 
-      Serial.println("Target received of assign " + String(VG99_current_assign) + ": " + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
+      DEBUGMSG("Target received of assign " + String(VG99_current_assign) + ": " + String(FC300_ctls[VG99_current_assign].assign_target, HEX));
 
       // Write the received bytes in the array
       FC300_ctls[VG99_current_assign].target_byte1 = sxdata[11];

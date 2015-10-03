@@ -66,7 +66,7 @@ void store_memory(uint8_t number) {
   EEPROM.write(location + 4, booleans1); // Store the boolean values
   EEPROM.write(location + 5, booleans2); // Store the boolean values
   //show_status_message("Memory " + String(number + 1) + " stored ");
-  Serial.println("write: B" + String(booleans1, BIN) + ", B" + String(booleans2, BIN));
+  DEBUGMSG("write: B" + String(booleans1, BIN) + ", B" + String(booleans2, BIN));
 }
 
 // Store data in memory location
@@ -93,7 +93,7 @@ void read_memory(uint8_t number) {
   VG99_COSM_A_onoff = (booleans2 & 64) >> 6;
   VG99_COSM_B_onoff = (booleans2 & 128) >> 7;
 
-  Serial.println("read: B" + String(booleans1, BIN) + ", B" + String(booleans2, BIN));
+  DEBUGMSG("read: B" + String(booleans1, BIN) + ", B" + String(booleans2, BIN));
   
   bpm = EEPROM.read(location + 3);
   VG99_patch_number = EEPROM.read(location + 2) + (VG99_patchnumber_bit1 << 8);

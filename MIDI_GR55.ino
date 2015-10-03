@@ -103,7 +103,7 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     show_status_message("GR-55 detected  ");
     GR55_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     GR55_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
-    Serial.println("GR-55 detected on MIDI port " + String(Current_MIDI_port));
+    DEBUGMSG("GR-55 detected on MIDI port " + String(Current_MIDI_port));
     request_GR55(GR55_REQUEST_MODE); // Check for guitar or bass mode
     request_GR55(GR55_REQUEST_PATCH_NUMBER); // Request the current patch number
     GR55_do_after_patch_selection();
@@ -120,7 +120,7 @@ void write_GR55(uint32_t address, uint8_t value) // For sending one data byte
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(14, sysexmessage);
   if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(13, sysexmessage);
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(13, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(GR55)");
 }
 
@@ -132,7 +132,7 @@ void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
   if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GR55)");
 }
 
@@ -144,7 +144,7 @@ void request_GR55(uint32_t address, uint8_t no_of_bytes)
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(17, sysexmessage);
   if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(16, sysexmessage);
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
-  if (GR55_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(16, sysexmessage);
+  if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(GR55)");
 }
 
@@ -198,13 +198,13 @@ void GR55_do_after_patch_selection() {
   GP10_mute();
   VG99_mute();
   GR55_request_name();
-  //GR55_request_guitar_switch_states(); // Moet later
+  //GR55_request_guitar_switch_states(); // Should come after patch name is read
   //GR55_request_stompbox_states();
   //if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GR55_send_bpm(); // Here is too soon, the GR55 does not pick it up - this line is moved to the Check_MIDI_in_GR55() procedure.
   update_LEDS = true;
   update_lcd = true;
-  //EEPROM.write(EEPROM_GR55_PATCH_MSB, (GR55_patch_number / 256));
-  //EEPROM.write(EEPROM_GR55_PATCH_LSB, (GR55_patch_number % 256));
+  EEPROM.write(EEPROM_GR55_PATCH_MSB, (GR55_patch_number / 256));
+  EEPROM.write(EEPROM_GR55_PATCH_LSB, (GR55_patch_number % 256));
 }
 
 void GR55_request_patch_number()
@@ -386,7 +386,7 @@ void GR55_stomp_press(uint8_t number) {
   // Press the pedal via cc
   GR55_send_cc(GR55_ctls[number].cc , 127);
 
-  //Serial.println("You pressed: "+String(number));
+  //DEBUGMSG("You pressed: "+String(number));
 
   // Toggle LED status
   if (GR55_ctls[number].LED == GR55_ctls[number].colour_on) GR55_ctls[number].LED = GR55_ctls[number].colour_off;
@@ -424,14 +424,14 @@ void GR55_stomp_release(uint8_t number) {
 
 void Request_GR55_CTL_first_assign() {
   GR55_current_assign = 0; //After the name is read, the assigns can be read
-  Serial.println("Start reading GR55 assigns");
+  DEBUGMSG("Start reading GR55 assigns");
   GR55_set_sysex_watchdog();
   Request_GR55_CTL_current_assign();
 }
 
 void Request_GR55_CTL_current_assign() { //Will request the next assign - the assigns are read one by one, otherwise the data will not arrive!
   if (GR55_current_assign < GR55_NUMBER_OF_CTLS) {
-    Serial.println("Request GR55_current_assign=" + String(GR55_current_assign));
+    DEBUGMSG("Request GR55_current_assign=" + String(GR55_current_assign));
     request_GR55(GR55_ctls[GR55_current_assign].assign_addr, 12); // Request 12 bytes for the assign
     GR55_set_sysex_watchdog(); // Set the timer
   }
@@ -444,12 +444,12 @@ void Request_GR55_CTL_current_assign() { //Will request the next assign - the as
 void GR55_set_sysex_watchdog() {
   GR55sysexWatchdog = millis() + GR55_SYSEX_WATCHDOG_LENGTH;
   GR55_sysex_watchdog_running = true;
-  Serial.println("GR55 sysex watchdog started");
+  DEBUGMSG("GR55 sysex watchdog started");
 }
 
 void GR55_check_sysex_watchdog() {
   if ((millis() > GR55sysexWatchdog) && (GR55_sysex_watchdog_running)) {
-    Serial.println("GR55 sysex watchdog expired");
+    DEBUGMSG("GR55 sysex watchdog expired");
     Request_GR55_CTL_current_assign(); // Try reading the assign again
   }
 }
@@ -460,7 +460,7 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
   if (GR55_current_assign < GR55_NUMBER_OF_CTLS) { // Check if we have not reached the last assign.
     // Check if it is the CTL assign address
     if ((sxdata[6] == 0x12) && (address == GR55_ctls[GR55_current_assign].assign_addr)) {
-      //Serial.println("Received GR55_current_assign=" + String(GR55_current_assign));
+      //DEBUGMSG("Received GR55_current_assign=" + String(GR55_current_assign));
       // Copy the data into the FC300 assign array
       uint8_t assign_source_cc = (sxdata[21] - 8); //cc01 - cc31 are stored as 9 - 39
       GR55_ctls[GR55_current_assign].assign_on = ((sxdata[11] == 0x01) && (assign_source_cc == GR55_ctls[GR55_current_assign].cc));
@@ -469,20 +469,20 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
       GR55_ctls[GR55_current_assign].assign_max = ((sxdata[18] - 0x04) << 8) + (sxdata[19] << 4) + sxdata[20];
       GR55_ctls[GR55_current_assign].assign_latch = ((sxdata[22] == 0x01) && (GR55_ctls[GR55_current_assign].assign_on));
 
-      //Serial.println("Assign_on:" + String(GR55_ctls[GR55_current_assign].assign_on));
-      //Serial.println("Assign_target:" + String(GR55_ctls[GR55_current_assign].assign_target, HEX));
+      //DEBUGMSG("Assign_on:" + String(GR55_ctls[GR55_current_assign].assign_on));
+      //DEBUGMSG("Assign_target:" + String(GR55_ctls[GR55_current_assign].assign_target, HEX));
 
       //Request the status of the target from the patch temporary area is assignment is on
       if (GR55_ctls[GR55_current_assign].assign_on == true) {
         GR55_target_lookup(GR55_current_assign); // Lookup the address of the target in the GR55_Parameters array
-        Serial.println("Request target of assign " + String(GR55_current_assign) + ": " + String(GR55_ctls[GR55_current_assign].target_address, HEX));
+        DEBUGMSG("Request target of assign " + String(GR55_current_assign) + ": " + String(GR55_ctls[GR55_current_assign].target_address, HEX));
         request_GR55((0x18000000 + GR55_ctls[GR55_current_assign].target_address), 2);
       }
       else {
         GR55_ctls[GR55_current_assign].LED = 0; // Switch the LED off
         GR55_ctls[GR55_current_assign].colour_on = GR55_STOMP_COLOUR_ON; // Set the on colour to default
         GR55_ctls[GR55_current_assign].colour_off = 0; // Set the off colour to LED off
-        //Serial.println("Current LED off for GR55_current_assign=" + String(GR55_current_assign));
+        //DEBUGMSG("Current LED off for GR55_current_assign=" + String(GR55_current_assign));
         GR55_current_assign++; // Select the next assign
         Request_GR55_CTL_current_assign(); //Request the next assign
       }
@@ -493,7 +493,7 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
     uint32_t requested_address = 0x18000000 + GR55_ctls[GR55_current_assign].target_address;
     if ((sxdata[6] == 0x12) && (address == requested_address) && (GR55_ctls[GR55_current_assign].target_address != 0)) {
 
-      Serial.println("Target received of assign " + String(GR55_current_assign) + ": " + String(GR55_ctls[GR55_current_assign].target_address, HEX));
+      DEBUGMSG("Target received of assign " + String(GR55_current_assign) + ": " + String(GR55_ctls[GR55_current_assign].target_address, HEX));
 
       // Write the received bytes in the array
       GR55_ctls[GR55_current_assign].target_byte1 = sxdata[11];
@@ -502,7 +502,7 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
       GR55_find_colours(GR55_current_assign);
 
       // Set the LED status for this ctl pedal
-      Serial.println("Target byte:" + String(GR55_ctls[GR55_current_assign].target_byte1, HEX) + " == Assign max:" + String(GR55_ctls[GR55_current_assign].assign_max, HEX));
+      DEBUGMSG("Target byte:" + String(GR55_ctls[GR55_current_assign].target_byte1, HEX) + " == Assign max:" + String(GR55_ctls[GR55_current_assign].assign_max, HEX));
       if (((GR55_ctls[GR55_current_assign].reversed == false) && (GR55_ctls[GR55_current_assign].target_byte1 == GR55_ctls[GR55_current_assign].assign_max)) ||
           ((GR55_ctls[GR55_current_assign].reversed == true) && (GR55_ctls[GR55_current_assign].target_byte1 == GR55_ctls[GR55_current_assign].assign_min))) {
         GR55_ctls[GR55_current_assign].LED = GR55_ctls[GR55_current_assign].colour_on;

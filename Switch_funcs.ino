@@ -170,7 +170,7 @@ void global_tap_tempo() {
   new_time = micros(); //Store the current time
   time_diff = new_time - prev_time;
   prev_time = new_time;
-  Serial.println("Tap no:" + String(tap_time_index) + " " + String(time_diff));
+  DEBUGMSG("Tap no:" + String(tap_time_index) + " " + String(time_diff));
 
   // If time difference between two taps is too short or too long, we will start new tapping sequence
   if ((time_diff < MIN_TIME) || (time_diff > MAX_TIME)) {
@@ -200,7 +200,7 @@ void global_tap_tempo() {
     avg_time = total_time / (tap_time_index + 1);
     bpm = ((60000000 + (avg_time / 2)) / avg_time); // Calculate the bpm
     EEPROM.write(EEPROM_bpm, bpm);  // Store it in EEPROM
-    Serial.println(" tot:" + String(total_time) + " avg:" + String(avg_time));
+    DEBUGMSG(" tot:" + String(total_time) + " avg:" + String(avg_time));
     
     // Send it to the devices
     GP10_send_bpm();

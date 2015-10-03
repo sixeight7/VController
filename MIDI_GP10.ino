@@ -44,9 +44,10 @@
 #define GP10_COSM_GUITAR_SW 0x20001000 // The address of the COSM guitar switch
 #define GP10_NORMAL_PU_SW 0x20000804 // The address of the COSM guitar switch
 bool GP10_request_onoff = false;
-bool GP10_skip_request_guitar_switch_states = false;
 
 uint8_t GP10_MIDI_port = 0; // What port is the GP10 connected to (0 - 3)
+
+uint8_t GP10_current_stomp = 255; //Keeps track of which stomp to read
 
 // ********************************* Section 2: GP10 comon MIDI in functions ********************************************
 
@@ -70,6 +71,7 @@ void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlengt
         GP10_patch_name = GP10_patch_name + static_cast<char>(sxdata[count]); //Add ascii character to Patch Name String
       }
       update_lcd = true;
+      GP10_request_guitar_switch_states(); // Now read the guitar states
     }
 
     // Check if it is the tuner (address: 0x7F, 0x00, 0x00, 0x02)
@@ -107,7 +109,7 @@ void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     show_status_message("GP-10 detected  ");
     GP10_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     GP10_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
-    Serial.println("GP-10 detected on MIDI port " + String(Current_MIDI_port));
+    DEBUGMSG("GP-10 detected on MIDI port " + String(Current_MIDI_port));
     request_GP10(GP10_REQUEST_PATCH_NUMBER);
     write_GP10(GP10_EDITOR_MODE_ON); // Put the GP10 in EDITOR mode - otherwise tuner will not work
     GP10_do_after_patch_selection();
@@ -124,7 +126,7 @@ void write_GP10(uint32_t address, uint8_t value) // For sending one data byte
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(15, sysexmessage);
   if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(14, sysexmessage);
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(14, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GP10)");
 }
 
@@ -136,7 +138,7 @@ void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(16, sysexmessage);
   if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(15, sysexmessage);
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(15, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(15, sysexmessage);
   debug_sysex(sysexmessage, 16, "out(GP10)");
 }
 
@@ -148,7 +150,7 @@ void request_GP10(uint32_t address, uint8_t no_of_bytes)
   if (GP10_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(18, sysexmessage);
   if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendSysEx(17, sysexmessage);
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(17, sysexmessage);
-  if (GP10_MIDI_port == MIDI3_PORT) MIDI2.sendSysEx(17, sysexmessage);
+  if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(17, sysexmessage);
   debug_sysex(sysexmessage, 18, "out(GP10)");
 }
 
@@ -163,7 +165,7 @@ void GP10_SendProgramChange(uint8_t new_patch) {
   if (GP10_MIDI_port == MIDI1_PORT) MIDI1.sendProgramChange(new_patch, GP10_MIDI_channel);
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendProgramChange(new_patch, GP10_MIDI_channel);
   if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendProgramChange(new_patch, GP10_MIDI_channel);
-  Serial.println("out(GP10) PC" + String(new_patch)); //Debug
+  DEBUGMSG("out(GP10) PC" + String(new_patch)); //Debug
   GP10_do_after_patch_selection();
 }
 
@@ -171,14 +173,16 @@ void GP10_do_after_patch_selection() {
   GP10_on = true;
   GR55_mute();
   VG99_mute();
-  GP10_request_name();
-  Request_GP10_first_stomp();
+  GP10_current_stomp = 255; // Stop reading stomps in case we came from there
+  GP10_request_onoff = false;
+  
+  GP10_request_name(); // After name is read the guitar states will be read
+                       // And then the stromps will be requested
+  //Request_GP10_first_stomp();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GP10_send_bpm();
   update_LEDS = true;
   update_lcd = true;
-  //EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
-  if (!GP10_skip_request_guitar_switch_states) GP10_request_guitar_switch_states();
-  GP10_skip_request_guitar_switch_states = false;
+  EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
 }
 
 void GP10_request_patch_number()
@@ -218,6 +222,7 @@ void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
     if (address == GP10_NORMAL_PU_SW) {
       GP10_nrml_pu_onoff = sxdata[12];  // Store the value
       GP10_request_onoff = false;
+      Request_GP10_first_stomp(); //Now read the GP10 stomps
     }
   }
 }
@@ -327,8 +332,6 @@ uint8_t GP10_FX_colours[17][2] = {
   { FX_DELAY_COLOUR_ON, FX_DELAY_COLOUR_OFF }, // Colour for "DELAY"
 };
 
-uint8_t GP10_current_stomp = 0; //Keeps track of which stomp to read
-
 // Sends requests to the GP10 to send the current settings of all the GP10_stomps
 void Request_GP10_first_stomp() {
   GP10_current_stomp = 0; //After the name is read, the assigns can be read
@@ -353,7 +356,7 @@ void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int 
       if (sxdata[12] == 0x01) GP10_stomps[addr_count].LED = GP10_stomp_LED_on_colour(addr_count); // Switch the LED on
       if (sxdata[12] == 0x00) GP10_stomps[addr_count].LED = GP10_stomp_LED_off_colour(addr_count); // Switch the LED off
       update_LEDS = true;
-      Serial.println("Stompbox:" + String(addr_count) + " Type:" + String(sxdata[13]));
+      DEBUGMSG("Stompbox:" + String(addr_count) + " Type:" + String(sxdata[13]));
       if (GP10_current_stomp == GP10_FX_stomp) GP10_set_FX_LEDS(); // Set LEDs of FX stomps when neccesary
       if (GP10_current_stomp < GP10_NUMBER_OF_STOMPS) GP10_current_stomp++; //Move to the next stomp if we have to...
     }

@@ -34,9 +34,7 @@
 void setup()
 {
   setup_LED_control(); //Should be first, to reduce startup flash of LEDs
-  Serial.begin(115200);
-  while(!Serial); // Wait until the serial communication is ready
-  Serial.println("VController started...");
+  setup_debug();
   setup_eeprom();
   setup_switch_check();
   setup_switch_control();
@@ -56,3 +54,15 @@ void loop()
   main_switch_funcs();
   //show_status_message("bank:"+String(GR55_bank_number) + " patch:"+String(GR55_patch_number));
 }
+
+bool debug_active = true; // Switch debugging on or off here
+
+void setup_debug() {
+  if (debug_active) {
+    Serial.begin(115200);
+    delay(3000); // Wait until the serial communication is ready
+    Serial.println("VController started...");
+  }
+}
+
+#define DEBUGMSG if (debug_active) Serial.println //Use this command for debug purposes

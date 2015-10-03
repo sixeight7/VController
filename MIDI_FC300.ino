@@ -35,7 +35,7 @@ void FC300_identity_check(const unsigned char* sxdata, short unsigned int sxleng
     show_status_message("FC-300 detected  ");
     FC300_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     FC300_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
-    Serial.println("FC-300 detected on MIDI port " + String(Current_MIDI_port));
+    DEBUGMSG("FC-300 detected on MIDI port " + String(Current_MIDI_port));
   }
 }
 
@@ -47,6 +47,7 @@ void write_FC300own(uint32_t address, uint8_t value)
   usbMIDI.sendSysEx(14, sysexmessage);
   MIDI1.sendSysEx(13, sysexmessage);
   MIDI2.sendSysEx(13, sysexmessage);
+  MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(FC300o)");
 }
 
@@ -58,6 +59,7 @@ void write_FC300fc(uint16_t address, uint8_t value)
   usbMIDI.sendSysEx(12, sysexmessage);
   MIDI1.sendSysEx(11, sysexmessage);
   MIDI2.sendSysEx(11, sysexmessage);
+  MIDI3.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(FC300f)");
 }
 

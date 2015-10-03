@@ -86,7 +86,7 @@ void OnProgramChange(byte channel, byte program)
 
 void OnControlChange(byte channel, byte control, byte value)
 {
-  Serial.println("CC #" + String(control) + " Value:" + String(value) + " received on channel " + String(channel)); // Show on serial debug screen
+  DEBUGMSG("CC #" + String(control) + " Value:" + String(value) + " received on channel " + String(channel)); // Show on serial debug screen
 
   // Check the source by checking the channel
   if (channel == GP10_MIDI_channel) { // GP10 outputs a control change message
@@ -187,6 +187,22 @@ void Check_MIDI2_watchdog() {
   }
 }
 
+#define MIDI3_WATCHDOG_LENGTH 1000 // watchdog for active sense messages (in msec)
+unsigned long MIDI3_watchdog = 0;
+bool MIDI3_active = false;
+
+void OnActiveSenseMIDI3() {
+  MIDI3_watchdog = millis() + MIDI3_WATCHDOG_LENGTH;
+  MIDI3_active = true;
+}
+
+void Check_MIDI3_watchdog() {
+  if ((MIDI3_active) && (millis() > MIDI3_watchdog)) {
+    show_status_message("MIDI 3 lost...");
+    MIDI3_active = false;
+  }
+}
+
 void setup_MIDI_common()
 {
   usbMIDI.setHandleNoteOff(OnNoteOff);
@@ -220,6 +236,7 @@ void setup_MIDI_common()
   MIDI3.setHandleProgramChange(OnProgramChange);
   MIDI3.setHandleControlChange(OnControlChange);
   MIDI3.setHandleSystemExclusive(OnSerialSysEx);
+  MIDI3.setHandleActiveSensing(OnActiveSenseMIDI3);
 }
 
 void main_MIDI_common()
@@ -239,6 +256,7 @@ void main_MIDI_common()
   VG99_check_sysex_watchdog();
   Check_MIDI1_watchdog();
   Check_MIDI2_watchdog();
+  Check_MIDI3_watchdog();
 }
 
 // *************************************** Common functions ***************************************
@@ -273,6 +291,7 @@ void check_for_roland_devices()
       usbMIDI.sendSysEx(6, sysexbuffer);
       MIDI1.sendSysEx(5, sysexbuffer);
       MIDI2.sendSysEx(5, sysexbuffer);
+      MIDI3.sendSysEx(5, sysexbuffer);
       debug_sysex(sysexbuffer, 6, "CKout");
     }
   }
@@ -280,14 +299,14 @@ void check_for_roland_devices()
 
 //Debug sysex messages by sending them to the serial monitor
 void debug_sysex(const unsigned char* sxdata, short unsigned int sxlength, String my_source) {
-  //if (sxdata[2] != 0x7F) { // Filter out status messages
-  Serial.print(my_source + ":");
-  for (uint8_t i = 0; i < sxlength; i++) {
-    if (sxdata[i] < 0x10) Serial.print("0" + String(sxdata[i], HEX) + " ");
-    else Serial.print(String(sxdata[i], HEX) + " ");
+  if (debug_active) {
+    Serial.print(my_source + ":");
+    for (uint8_t i = 0; i < sxlength; i++) {
+      if (sxdata[i] < 0x10) Serial.print("0" + String(sxdata[i], HEX) + " ");
+      else Serial.print(String(sxdata[i], HEX) + " ");
+    }
+    Serial.println();
   }
-  Serial.println();
-  //}
 }
 
 /*
