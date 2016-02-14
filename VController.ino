@@ -52,6 +52,7 @@ void loop()
   main_LED_control();
   main_MIDI_common();
   main_switch_funcs();
+  serial_checker();
   //show_status_message("bank:"+String(GR55_bank_number) + " patch:"+String(GR55_patch_number));
 }
 
@@ -66,3 +67,8 @@ void setup_debug() {
 }
 
 #define DEBUGMSG if (debug_active) Serial.println //Use this command for debug purposes
+
+void serial_checker() {
+  uint8_t number = Serial1.available();
+  if (number > 0) DEBUGMSG("Serial1: "+String(number));
+}

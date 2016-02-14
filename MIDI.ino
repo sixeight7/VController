@@ -29,7 +29,7 @@
 #include <midi_Settings.h>
 
 // ***************************** Settings you may want to change *****************************
-#define CHECK4DEVICES_TIMER_LENGTH 3000 // Check every three seconds which Roland devices are connected
+#define CHECK4DEVICES_TIMER_LENGTH 1000 // Check every three seconds which Roland devices are connected
 unsigned long Check4DevicesTimer = 0;
 
 #define SEND_ACTIVE_SENSE_TIMER_LENGTH 300 // Check active sense every 0.3 seconds
@@ -62,6 +62,8 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial3, MIDI3); //Enables serial3 port for
 uint8_t Current_MIDI_port;
 bool no_device_check = false; // Check for devices should not occur right after a patch change.
 
+
+
 // ******************************** MIDI In section ********************************************
 
 // Sysex for detecting Roland devices
@@ -69,12 +71,12 @@ bool no_device_check = false; // Check for devices should not occur right after 
 
 void OnNoteOn(byte channel, byte note, byte velocity)
 {
-
+  bass_mode_note_on(channel, note, velocity);
 }
 
 void OnNoteOff(byte channel, byte note, byte velocity)
 {
-
+  bass_mode_note_off(channel, note, velocity);
 }
 
 void OnProgramChange(byte channel, byte program)
@@ -104,6 +106,7 @@ void OnControlChange(byte channel, byte control, byte value)
       VG99_CC01 = value;
     }
   }
+
 }
 
 void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_comp)
@@ -117,6 +120,7 @@ void OnSysEx(const unsigned char* sxdata, short unsigned int sxlength, bool sx_c
     check_SYSEX_in_GR55(sxdata, sxlength);
     check_SYSEX_in_VG99(sxdata, sxlength);
     check_SYSEX_in_VG99fc(sxdata, sxlength);
+
   }
 
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
@@ -134,6 +138,7 @@ void OnSerialSysEx(byte *sxdata, unsigned sxlength)
     check_SYSEX_in_GR55(sxdata, sxlength);
     check_SYSEX_in_VG99(sxdata, sxlength);
     check_SYSEX_in_VG99fc(sxdata, sxlength);
+
   }
 
   if (sxdata[1] == 0x7E) { //Check if it is a Universal Non-Real Time message
@@ -155,19 +160,7 @@ void Check_MIDI1_watchdog() {
   if ((MIDI1_active) && (millis() > MIDI1_watchdog)) {
     show_status_message("MIDI 1 lost...");
     MIDI1_active = false;
-    // Can we "reboot the serial connection"?:
-    //MIDI1.resetInput();
-    /*Serial1.end(); // Shut down the serial port
-    delay(10);
-    MIDI1.begin(MIDI_CHANNEL_OMNI);
-    MIDI1.turnThruOff();
-    MIDI1.setHandleNoteOff(OnNoteOff);
-    MIDI1.setHandleNoteOn(OnNoteOn) ;
-    MIDI1.setHandleProgramChange(OnProgramChange);
-    MIDI1.setHandleControlChange(OnControlChange);
-    MIDI1.setHandleSystemExclusive(OnSerialSysEx);
-    MIDI1.setHandleActiveSensing(OnActiveSenseMIDI1);
-    */
+    //full_reset();
   }
 }
 
@@ -211,6 +204,8 @@ void setup_MIDI_common()
   usbMIDI.setHandleControlChange(OnControlChange);
   usbMIDI.setHandleSysEx(OnSysEx);
 
+  //pinMode(0, INPUT_PULLUP); //Add the internal pullup resistor to pin 0 (Rx)
+  delay(100);
   MIDI1.begin(MIDI_CHANNEL_OMNI);
   MIDI1.turnThruOff();
   MIDI1.setHandleNoteOff(OnNoteOff);
@@ -220,6 +215,7 @@ void setup_MIDI_common()
   MIDI1.setHandleSystemExclusive(OnSerialSysEx);
   MIDI1.setHandleActiveSensing(OnActiveSenseMIDI1);
 
+  delay(100);
   MIDI2.begin(MIDI_CHANNEL_OMNI);
   MIDI2.turnThruOff();
   MIDI2.setHandleNoteOff(OnNoteOff);
@@ -229,6 +225,7 @@ void setup_MIDI_common()
   MIDI2.setHandleSystemExclusive(OnSerialSysEx);
   MIDI2.setHandleActiveSensing(OnActiveSenseMIDI2);
 
+  delay(100);
   MIDI3.begin(MIDI_CHANNEL_OMNI);
   MIDI3.turnThruOff();
   MIDI3.setHandleNoteOff(OnNoteOff);
@@ -251,14 +248,31 @@ void main_MIDI_common()
   MIDI3.read();
 
   check_for_roland_devices();  // Check actively if any roland devices are out there
-  send_active_sense();         // Send Active Sense periodically
+
   GR55_check_sysex_watchdog();
   VG99_check_sysex_watchdog();
+
+  send_active_sense();         // Send Active Sense periodically
   Check_MIDI1_watchdog();
   Check_MIDI2_watchdog();
   Check_MIDI3_watchdog();
 }
+/*
+void serialEvent1() {
+  Current_MIDI_port = MIDI1_PORT;
+  MIDI1.read();
+}
 
+void serialEvent2() {
+  Current_MIDI_port = MIDI2_PORT;
+  MIDI2.read();
+}
+
+void serialEvent3() {
+  Current_MIDI_port = MIDI3_PORT;
+  MIDI3.read();
+}
+*/
 // *************************************** Common functions ***************************************
 
 void check_SYSEX_in_universal(const unsigned char* sxdata, short unsigned int sxlength)
@@ -274,6 +288,7 @@ void check_SYSEX_in_universal(const unsigned char* sxdata, short unsigned int sx
 }
 
 // check for Roland devices
+uint8_t check_device_no = 0;
 void check_for_roland_devices()
 {
   // Check if timer needs to be set
@@ -288,11 +303,13 @@ void check_for_roland_devices()
     // Send the message to all MIDI ports if no_device_check is not true!!
     if (no_device_check == false) {
       uint8_t sysexbuffer[6] = Anybody_out_there;
-      usbMIDI.sendSysEx(6, sysexbuffer);
-      MIDI1.sendSysEx(5, sysexbuffer);
-      MIDI2.sendSysEx(5, sysexbuffer);
-      MIDI3.sendSysEx(5, sysexbuffer);
+      if (check_device_no == 0 ) usbMIDI.sendSysEx(6, sysexbuffer);
+      if (check_device_no == 1 ) MIDI1.sendSysEx(5, sysexbuffer);
+      if (check_device_no == 2 ) MIDI2.sendSysEx(5, sysexbuffer);
+      if (check_device_no == 3 ) MIDI3.sendSysEx(5, sysexbuffer);
       debug_sysex(sysexbuffer, 6, "CKout");
+      check_device_no++;
+      if (check_device_no > 3) check_device_no = 0;
     }
   }
 }
@@ -326,10 +343,12 @@ void send_active_sense() {
 
     // Send the message to all MIDI ports
     //usbMIDI.sendRealTime(ActiveSensing);
-    using namespace midi;     // Otherwise ActiveSensing is not recognized by the compiler
-    MIDI1.sendRealTime(ActiveSensing);
-    MIDI2.sendRealTime(ActiveSensing);
-    MIDI3.sendRealTime(ActiveSensing);
+    if (no_device_check == false) {
+      using namespace midi;     // Otherwise ActiveSensing is not recognized by the compiler
+      MIDI1.sendRealTime(ActiveSensing);
+      MIDI2.sendRealTime(ActiveSensing);
+      MIDI3.sendRealTime(ActiveSensing);
+    }
   }
 }
 
@@ -339,3 +358,10 @@ uint8_t calc_checksum(uint16_t sum) {
   if (checksum == 0x80) checksum = 0;
   return checksum;
 }
+
+// Reset the VController (when midi is lost)
+void full_reset() {
+  // request reset
+  SCB_AIRCR = 0x05FA0004; //Reset command on Teensy LC
+}
+

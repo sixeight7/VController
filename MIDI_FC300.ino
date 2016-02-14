@@ -22,6 +22,9 @@
 
 uint8_t FC300_MIDI_port = 0;
 
+#define FC300_SYSEX_DELAY_LENGTH 10 // time between sysex messages (in msec)
+unsigned long FC300sysexDelay = 0;
+
 // ******************************** MIDI messages and functions for the Roland FC300 ********************************
 // FC300 has two sysex identities. One as itself and one as footcontroller. Therefore every function is double!
 
@@ -39,6 +42,11 @@ void FC300_identity_check(const unsigned char* sxdata, short unsigned int sxleng
   }
 }
 
+void FC300_check_sysex_delay() { // Will delay if last message was within GR55_SYSEX_DELAY_LENGTH (10 ms)
+  while (millis() - FC300sysexDelay <= FC300_SYSEX_DELAY_LENGTH) {}
+  FC300sysexDelay = millis();
+}
+
 void write_FC300own(uint32_t address, uint8_t value)
 {
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
@@ -49,6 +57,7 @@ void write_FC300own(uint32_t address, uint8_t value)
   MIDI2.sendSysEx(13, sysexmessage);
   MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(FC300o)");
+  FC300_check_sysex_delay();
 }
 
 void write_FC300fc(uint16_t address, uint8_t value)
@@ -61,5 +70,6 @@ void write_FC300fc(uint16_t address, uint8_t value)
   MIDI2.sendSysEx(11, sysexmessage);
   MIDI3.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(FC300f)");
+  FC300_check_sysex_delay();
 }
 

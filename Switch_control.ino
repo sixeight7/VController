@@ -84,6 +84,7 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
         case MODE_GR55_DIRECTSELECT3:
           switchcheck_MODE_GR55_DIRECTSELECT3();
           break;
+
         case MODE_VG99_PATCH:
           switchcheck_MODE_VG99_PATCH();
           break;
@@ -154,6 +155,8 @@ void main_switch_control()  // Checks if a button has been pressed and calls the
       if (switch_long_pressed == 12) SWITCH12_LONG_FUNC;
     }
   }
+  
+  if (switch_extra_long_pressed ==8) full_reset(); //Reset the V-Controller when button 8 is pressed extra long (3 sec)
 }
 
 // Mode 0: Tuner_mode
@@ -401,8 +404,9 @@ void switchcheck_MODE_STOMPbox_release(uint8_t page)
 }
 
 // Mode 2: GP10 patch mode - select the patch in the current bank
-void switchcheck_MODE_GP10_PATCH()
-{
+void switchcheck_MODE_GP10_PATCH() {
+#ifdef COMPILE_GP10
+
   if (switch_pressed < 10) {
     if (GP10_bank_selection_active == false) GP10_bank_number = (GP10_patch_number / 10); //Reset the bank to current patch
     uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed - 1);
@@ -410,22 +414,25 @@ void switchcheck_MODE_GP10_PATCH()
     else GP10_SendProgramChange(new_patch);
     GP10_bank_selection_active = false;
   }
+#endif
 }
 
 // Mode 3: GP10 direct select mode 1 - Now the number pressed is the new bank
-void switchcheck_MODE_GP10_DIRECTSELECT1()
-{
+void switchcheck_MODE_GP10_DIRECTSELECT1() {
+#ifdef COMPILE_GP10
+
   if (switch_pressed < 11) {
     GP10_bank_number = switch_pressed % 10; // Modulus 10 makes button 10 zero
     mode = MODE_GP10_DIRECTSELECT2;
     switch10_used = true;
   }
-
+#endif
 }
 
 // Mode 4: GP10 direct select mode 2 - Now
-void switchcheck_MODE_GP10_DIRECTSELECT2()
-{
+void switchcheck_MODE_GP10_DIRECTSELECT2() {
+#ifdef COMPILE_GP10
+
   if (switch_pressed <= 10) {
     select_mode(previous_mode);
     uint8_t new_patch = (GP10_bank_number) * 10 + (switch_pressed % 10) - 1; // switch_pressed % 10 makes buton 10 zero
@@ -434,12 +441,13 @@ void switchcheck_MODE_GP10_DIRECTSELECT2()
     if (new_patch == GP10_patch_number) GP10_select_switch();
     else GP10_SendProgramChange(new_patch);
   }
-
+#endif
 }
 
 // Mode 5: GR55 patch mode
-void switchcheck_MODE_GR55_PATCH()
-{
+void switchcheck_MODE_GR55_PATCH() {
+#ifdef COMPILE_GR55
+
   if (switch_pressed < 10) {
     if (GR55_bank_selection_active == false) GR55_bank_number = ((GR55_patch_number / 9) * 3); // Reset the bank to current patch - bank needs update, so the VController never jumps to other banks
     uint16_t new_patch = (GR55_bank_number * 3) + (switch_pressed - 1);
@@ -447,32 +455,38 @@ void switchcheck_MODE_GR55_PATCH()
     else GR55_SendProgramChange(new_patch);
     GR55_bank_selection_active = false;
   }
+#endif
 }
 
 // Mode 6: GR55 DirectSelect1 - press the first digit of the bank number
-void switchcheck_MODE_GR55_DIRECTSELECT1()
-{
+void switchcheck_MODE_GR55_DIRECTSELECT1() {
+#ifdef COMPILE_GR55
+
   if (switch_pressed < 11) {
     GR55_bank_number = (switch_pressed % 10) * 10; // Modulus 10 makes button 10 zero
     mode = MODE_GR55_DIRECTSELECT2;
     switch10_used = true;
   }
+#endif
 }
 
 // Mode 7: GR55 DirectSelect2 - press the second digit of the bank number
-void switchcheck_MODE_GR55_DIRECTSELECT2()
-{
+void switchcheck_MODE_GR55_DIRECTSELECT2() {
+#ifdef COMPILE_GR55
+
   if (switch_pressed < 11) {
     if (switch_pressed == 10) switch_pressed = 1;
     GR55_bank_number = GR55_bank_number + (switch_pressed % 10); // Modulus 10 makes button 10 zero
     mode = MODE_GR55_DIRECTSELECT3;
     switch10_used = true;
   }
+#endif
 }
 
 // Mode 8: GR55 DirectSelect3 - press the actual patch number
-void switchcheck_MODE_GR55_DIRECTSELECT3()
-{
+void switchcheck_MODE_GR55_DIRECTSELECT3() {
+#ifdef COMPILE_GR55
+
   if (switch_pressed <= 10) {
     uint16_t new_patch = (GR55_bank_number - 1) * 3 + ((switch_pressed - 1) % 3);
     if (new_patch == GR55_patch_number) GR55_select_switch();
@@ -480,11 +494,14 @@ void switchcheck_MODE_GR55_DIRECTSELECT3()
     select_mode(previous_mode);
     switch10_used = true;
   }
+#endif
 }
 
 // Mode 6: VG99 patch mode
-void switchcheck_MODE_VG99_PATCH()
-{
+
+void switchcheck_MODE_VG99_PATCH() {
+#ifdef COMPILE_VG99
+
   if (switch_pressed < 10) {
     if (VG99_bank_selection_active == false) VG99_bank_number = (VG99_patch_number / 10); //Reset the bank to current patch
     uint16_t new_patch = (VG99_bank_number) * 10 + (switch_pressed - 1);
@@ -492,29 +509,35 @@ void switchcheck_MODE_VG99_PATCH()
     else VG99_SendPatchChange(new_patch);
     VG99_bank_selection_active = false;
   }
+#endif
 }
 
 // Mode 7: VG99 bank mode
-void switchcheck_MODE_VG99_DIRECTSELECT1()
-{
+void switchcheck_MODE_VG99_DIRECTSELECT1() {
+#ifdef COMPILE_VG99
+
   if (switch_pressed < 11) {
     VG99_bank_number = (switch_pressed % 10); // Modulus 10 makes button 10 zero
     mode = MODE_VG99_DIRECTSELECT2;
     switch10_used = true;
   }
+#endif
 }
 
-void switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed()  //Long pressing a number button in Direct Select gets you in the bank from 100
-{
+void switchcheck_MODE_VG99_DIRECTSELECT1_long_pressed() { //Long pressing a number button in Direct Select gets you in the bank from 100
+#ifdef COMPILE_VG99
+
   if (switch_pressed < 11) {
     VG99_bank_number = (switch_long_pressed % 10) + 10; // Modulus 10 makes button 10 zero
     update_lcd = true;
     switch10_used = true;
   }
+#endif
 }
 
 // Mode 11: VG99 direct select mode 2
 void switchcheck_MODE_VG99_DIRECTSELECT2() {
+#ifdef COMPILE_VG99
   uint16_t new_patch;
 
   if (switch_pressed < 10) {
@@ -531,6 +554,7 @@ void switchcheck_MODE_VG99_DIRECTSELECT2() {
     else VG99_SendPatchChange(new_patch);
     switch10_used = true;
   }
+#endif
 }
 
 // Mode 12: MODE_GP10_GR55_COMBI
@@ -605,7 +629,7 @@ void switchcheck_MODE_MEMORIES_READ() {
     if ((GR55_detected) && (!GR55_on)) GR55_SendProgramChange(GR55_patch_number);
     if ((VG99_detected) && (!VG99_on)) VG99_SendPatchChange(VG99_patch_number);
     */
-    
+
     // Then send patch changes for devices that were on when memory was stored - this will switch off the previous ones
     if ((GP10_detected) && (GP10_on)) GP10_SendProgramChange(GP10_patch_number);
     if ((GR55_detected) && (GR55_on)) GR55_SendProgramChange(GR55_patch_number);

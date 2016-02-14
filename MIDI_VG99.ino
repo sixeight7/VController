@@ -66,6 +66,9 @@ uint8_t VG99_current_assign = 255; // The assign that is being read - set to a h
 unsigned long VG99sysexWatchdog = 0;
 boolean VG99_sysex_watchdog_running = false;
 
+#define VG99_SYSEX_DELAY_LENGTH 10 // time between sysex messages (in msec)
+unsigned long VG99sysexDelay = 0;
+
 // VG99 handshake with FC300
 // 1. VG99 sends continually F0 41 7F 00 00 1F 11 00 01 7F F7 on RRC port (not on other ports)
 // 2. FC300 responds with ???
@@ -73,8 +76,8 @@ boolean VG99_sysex_watchdog_running = false;
 
 // ********************************* Section 2: VG99 comon MIDI in functions ********************************************
 
-void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_VG99
   // Check if it is a message from a VG-99
   if ((sxdata[2] == VG99_device_id) && (sxdata[3] == 0x00) && (sxdata[4] == 0x00) && (sxdata[5] == 0x1C)) {
     uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
@@ -92,6 +95,7 @@ void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlengt
         VG99_patch_name = VG99_patch_name + static_cast<char>(sxdata[count]); //Add ascii character to Patch Name String
       }
       update_lcd = true;
+      Request_FC300_CTL_first_assign();
     }
 
     //VG99_check_guitar_switch_states(sxdata, sxlength);
@@ -106,10 +110,12 @@ void check_SYSEX_in_VG99(const unsigned char* sxdata, short unsigned int sxlengt
       //write_VG99rrc(0x00, 0x01);
     }
   }
+#endif
 }
 
-void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_VG99
+
   // Check if it is a message from a VG-99 in FC300 mode.
   if ((sxdata[3] == 0x00) && (sxdata[4] == 0x00) && (sxdata[5] == 0x20)) {
     uint16_t address = (sxdata[7] << 8) + sxdata[8]; // Make the address 16 bit
@@ -143,9 +149,11 @@ void check_SYSEX_in_VG99fc(const unsigned char* sxdata, short unsigned int sxlen
       update_lcd = true;
     }
   }
+#endif
 }
 
 void check_PC_in_VG99(byte channel, byte program) {
+#ifdef COMPILE_VG99
   // Check the source by checking the channel
   if (channel == VG99_MIDI_channel) { // VG99 outputs a program change
     if (VG99_patch_number != (VG99_CC01 * 100) + program) {
@@ -154,14 +162,16 @@ void check_PC_in_VG99(byte channel, byte program) {
       DEBUGMSG("Receive PC (VG99):" + String(VG99_patch_number));
     }
   }
+#endif
 }
 
-void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_VG99
+
   // Check if it is a VG-99
   if ((sxdata[6] == 0x1C) && (sxdata[7] == 0x02) && (VG99_detected == false)) {
     VG99_detected = true;
-    //show_status_message("VG-99 detected  ");
+    show_status_message("VG-99 detected  ");
     VG99_device_id = sxdata[2]; //Byte 2 contains the correct device ID
     VG99_MIDI_port = Current_MIDI_port; // Set the correct MIDI port for this device
     DEBUGMSG("VG-99 detected on MIDI port " + String(Current_MIDI_port));
@@ -169,12 +179,21 @@ void VG99_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     //write_VG99fc(FC300_SYSEX_MODE); // Wakes up the VG99 to the FC300
     VG99_do_after_patch_selection();
   }
+#endif
 }
 
 // ********************************* Section 3: VG99 comon MIDI out functions *******************************************
 
-void write_VG99(uint32_t address, uint8_t value) // For sending one data byte
-{
+void VG99_check_sysex_delay() { // Will delay if last message was within GR55_SYSEX_DELAY_LENGTH (10 ms)
+#ifdef COMPILE_VG99
+  while (millis() - VG99sysexDelay <= VG99_SYSEX_DELAY_LENGTH) {}
+  VG99sysexDelay = millis();
+#endif
+}
+
+void write_VG99(uint32_t address, uint8_t value) { // For sending one data byte
+#ifdef COMPILE_VG99
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x01C, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
@@ -183,10 +202,13 @@ void write_VG99(uint32_t address, uint8_t value) // For sending one data byte
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
-{
+void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) { // For sending two data bytes
+#ifdef COMPILE_VG99
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x01C, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
@@ -195,10 +217,13 @@ void write_VG99(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(VG99)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void write_VG99fc(uint16_t address, uint8_t value) // VG99 writing to the FC300
-{
+void write_VG99fc(uint16_t address, uint8_t value) { // VG99 writing to the FC300
+#ifdef COMPILE_VG99
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[12] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value, checksum, 0xF7};
@@ -207,10 +232,13 @@ void write_VG99fc(uint16_t address, uint8_t value) // VG99 writing to the FC300
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(11, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(11, sysexmessage);
   debug_sysex(sysexmessage, 12, "out(VG99fc)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void write_VG99fc(uint16_t address, uint8_t value1, uint8_t value2, uint8_t value3) // VG99 writing to the FC300 - 3 bytes version
-{
+void write_VG99fc(uint16_t address, uint8_t value1, uint8_t value2, uint8_t value3) { // VG99 writing to the FC300 - 3 bytes version
+#ifdef COMPILE_VG99
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into two bytes: ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[1] + ad[0] + value1 + value2 + value3); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, FC300_device_id, 0x00, 0x00, 0x020, 0x12, ad[1], ad[0], value1, value2, value3, checksum, 0xF7};
@@ -219,10 +247,13 @@ void write_VG99fc(uint16_t address, uint8_t value1, uint8_t value2, uint8_t valu
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(VG99fc)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void write_VG99rrc(uint8_t address, uint8_t value) // VG99 writing to the FC300 in undocumented mode
-{
+void write_VG99rrc(uint8_t address, uint8_t value) { // VG99 writing to the FC300 in undocumented mode
+#ifdef COMPILE_VG99
+
   uint8_t checksum = calc_checksum(address + value); // Calculate the Roland checksum
   uint8_t sysexmessage[11] = {0xF0, 0x41, 0x7F, 0x00, 0x00, 0x01F, 0x12, address, value, checksum, 0xF7};
   if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendSysEx(11, sysexmessage);
@@ -230,10 +261,13 @@ void write_VG99rrc(uint8_t address, uint8_t value) // VG99 writing to the FC300 
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(10, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(10, sysexmessage);
   debug_sysex(sysexmessage, 11, "out(VG99rrc)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void request_VG99(uint32_t address, uint8_t no_of_bytes)
-{
+void request_VG99(uint32_t address, uint8_t no_of_bytes) {
+#ifdef COMPILE_VG99
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[17] = {0xF0, 0x41, VG99_device_id, 0x00, 0x00, 0x1C, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
@@ -242,24 +276,34 @@ void request_VG99(uint32_t address, uint8_t no_of_bytes)
   if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
   if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(VG99)");
+  VG99_check_sysex_delay();
+#endif
 }
 
-void VG99_request_name()
-{
+void VG99_request_name() {
+#ifdef COMPILE_VG99
+
+  VG99_patch_name = "                ";
   request_VG99(VG99_REQUEST_PATCHNAME);
+#endif
 }
 
 void VG99_SendPatchChange(uint16_t new_patch) {
+#ifdef COMPILE_VG99
   //if (new_patch == VG99_patch_number) VG99_unmute();
   VG99_patch_number = new_patch;
   DEBUGMSG("Send Patch Change (VG99):" + String(VG99_patch_number));
   //write_VG99fc(FC300_NORMAL_MODE);
   VG99_SendProgramChange();
   //write_VG99(VG99_PATCH_CHANGE, VG99_patch_number / 128, VG99_patch_number % 128);
+  GP10_mute();
+  GR55_mute();
   VG99_do_after_patch_selection();
+#endif
 }
 
 void VG99_SendProgramChange() {
+#ifdef COMPILE_VG99
   if (VG99_MIDI_port == USBMIDI_PORT) {
     usbMIDI.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
     usbMIDI.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
@@ -276,48 +320,55 @@ void VG99_SendProgramChange() {
     MIDI3.sendControlChange(0 , VG99_patch_number / 100, VG99_MIDI_channel); // First send the bank number to CC00
     MIDI3.sendProgramChange(VG99_patch_number % 100, VG99_MIDI_channel);
   }
+#endif
 }
 
 void VG99_do_after_patch_selection() {
-  no_device_check = true; // disables checking for devices during reading of GR_55
+#ifdef COMPILE_VG99
+  no_device_check = true; // disables checking for devices during reading of VG_99
   VG99_current_assign = 255; // In case we were still in the middle of a previous patch change, switch off the lot
   VG99_request_onoff = false;
   VG99_sysex_watchdog_running = false;
-  
   VG99_on = true;
-  GP10_mute();
-  GR55_mute();
+
   //VG99_request_guitar_switch_states();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) VG99_send_bpm();
   //if (VG99_FC300_mode == false)
   VG99_request_name();
-  Request_FC300_CTL_first_assign(); // Make sure this starts after VG99_request-guitar_onoff_state is done - they often ask for the same info - switches off now
+  //Request_FC300_CTL_first_assign(); // Make sure this starts after VG99_request-guitar_onoff_state is done - they often ask for the same info - switches off now
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_VG99_PATCH_MSB, (VG99_patch_number / 256));
   EEPROM.write(EEPROM_VG99_PATCH_LSB, (VG99_patch_number % 256));
+#endif
 }
 
 void VG99_send_bpm() {
+#ifdef COMPILE_VG99
   write_VG99(VG99_TEMPO, (bpm - 40) / 128, (bpm - 40) % 128); // Tempo is modulus 128 on the VG99. And sending 0 gives tempo 40.
+#endif
 }
 
 void VG99_TAP_TEMPO_LED_ON() {
+#ifdef COMPILE_VG99
   if ((VG99_TAP_TEMPO_LED_CC > 0) && (VG99_detected)) {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendControlChange(VG99_TAP_TEMPO_LED_CC , 127, VG99_MIDI_channel);
   }
+#endif
 }
 
 void VG99_TAP_TEMPO_LED_OFF() {
+#ifdef COMPILE_VG99
   if ((VG99_TAP_TEMPO_LED_CC > 0) && (VG99_detected)) {
     if (VG99_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
     if (VG99_MIDI_port == MIDI3_PORT) MIDI3.sendControlChange(VG99_TAP_TEMPO_LED_CC , 0, VG99_MIDI_channel);
   }
+#endif
 }
 // ********************************* Section 4: VG99 controller functions ***********************************************
 
@@ -327,13 +378,16 @@ void VG99_TAP_TEMPO_LED_OFF() {
 
 
 void VG99_request_guitar_switch_states() {
+#ifdef COMPILE_VG99
   VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
   request_VG99(VG99_COSM_GUITAR_A_SW, 1);
   request_VG99(VG99_COSM_GUITAR_B_SW, 1);
   VG99_request_onoff = true;
+#endif
 }
 
 void VG99_check_guitar_switch_states(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_VG99
   if (VG99_request_onoff == true) {
     uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
     if (address == VG99_COSM_GUITAR_A_SW) {
@@ -346,9 +400,11 @@ void VG99_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
       //Request_FC300_CTL_first_assign(); // Now request the assigns...
     }
   }
+#endif
 }
 
 void VG99_select_switch() {
+#ifdef COMPILE_VG99
   if ((VG99_on) && (!US20_emulation_state_changed)) {
     VG99_always_on_toggle();
   }
@@ -359,9 +415,11 @@ void VG99_select_switch() {
     if (mode != MODE_GP10_GR55_COMBI) show_status_message(VG99_patch_name); // Show the correct patch name
     US20_emulation_state_changed = false;
   }
+#endif
 }
 
 void VG99_always_on_toggle() {
+#ifdef COMPILE_VG99
   VG99_always_on = !VG99_always_on; // Toggle VG99_always_on
   if (VG99_always_on) {
     VG99_unmute();
@@ -372,23 +430,28 @@ void VG99_always_on_toggle() {
     show_status_message("VG99 can be muted");
     US20_emulation_state_changed = true;
   }
+#endif
 }
 
 void VG99_unmute() {
+#ifdef COMPILE_VG99
   VG99_on = true;
   VG99_select_LED = VG99_PATCH_COLOUR; //Switch the LED on
   //write_VG99(VG99_COSM_GUITAR_A_SW, VG99_COSM_A_onoff); // Switch COSM guitar on
   //write_VG99(VG99_COSM_GUITAR_B_SW, VG99_COSM_B_onoff); // Switch normal pu on
   VG99_SendProgramChange(); //Just sending the program change will put the sound back on
+#endif
 }
 
 void VG99_mute() {
+#ifdef COMPILE_VG99
   if (VG99_always_on == false) {
     VG99_on = false;
     VG99_select_LED = VG99_OFF_COLOUR; //Switch the LED off
     write_VG99(VG99_COSM_GUITAR_A_SW, 0x00); // Switch COSM guitar off
     write_VG99(VG99_COSM_GUITAR_B_SW, 0x00); // Switch normal pu off
   }
+#endif
 }
 
 // VG99 FC300 CTL-1 - CTL-8 control
@@ -442,6 +505,7 @@ FC300_CTL FC300_ctls[FC300_NUMBER_OF_CTLS] = {
 };
 
 void FC300_stomp_press(uint8_t number) {
+#ifdef COMPILE_VG99
 
   // Press the FC300 pedal via sysex
   write_VG99fc(FC300_ctls[number].address, 0x7F);
@@ -458,9 +522,11 @@ void FC300_stomp_press(uint8_t number) {
     String msg = FC300_ctls[number].name;
     show_status_message(msg + " is off");
   }
+#endif
 }
 
 void FC300_stomp_release(uint8_t number) {
+#ifdef COMPILE_VG99
 
   // Release the FC300 pedal via sysex
   write_VG99fc(FC300_ctls[number].address, 0x00);
@@ -469,9 +535,11 @@ void FC300_stomp_release(uint8_t number) {
     if (FC300_ctls[number].assign_on == true) FC300_ctls[number].LED = FC300_ctls[number].colour_off; // Switch the LED off with the GP10 stomp colour
     else FC300_ctls[number].LED = 0; //Or if the assign is not set, switch the LED off
   }
+#endif
 }
 
 void VG99_fix_reverse_pedals() {
+#ifdef COMPILE_VG99
   // Pedal 3,5 and 7 are reversed. But by operating them once the VG99 remembers the settings
   write_VG99fc(FC300_CTL3, 0x7F); // Press CTL-3
   write_VG99fc(FC300_CTL3, 0x00); // Release CTL-3
@@ -480,6 +548,7 @@ void VG99_fix_reverse_pedals() {
   write_VG99fc(FC300_CTL7, 0x7F); // Press CTL-7
   write_VG99fc(FC300_CTL7, 0x00); // Release CTL-7
 
+#endif
 }
 
 // Reading of the assigns - to avoid MIDI buffer overruns in the VG99, the assigns are read one by one
@@ -491,13 +560,16 @@ void VG99_fix_reverse_pedals() {
 //    It will then update VG99_current_assign and request the next assign - which brings us back to step 2.
 
 void Request_FC300_CTL_first_assign() {
+#ifdef COMPILE_VG99
   VG99_current_assign = 0; //After the name is read, the assigns can be read
   DEBUGMSG("Start reading FC300 CTL assigns");
   VG99_set_sysex_watchdog();
   Request_FC300_CTL_current_assign();
+#endif
 }
 
 void Request_FC300_CTL_current_assign() { //Will request the next assign - the assigns are read one by one, otherwise the data will not arrive!
+#ifdef COMPILE_VG99
   if (VG99_current_assign < FC300_NUMBER_OF_CTLS) {
     DEBUGMSG("Request VG99_current_assign=" + String(VG99_current_assign));
     request_VG99(FC300_ctls[VG99_current_assign].assign_addr, 8); // Request 8 bytes for the assign
@@ -507,22 +579,28 @@ void Request_FC300_CTL_current_assign() { //Will request the next assign - the a
     VG99_sysex_watchdog_running = false; // Stop the timer
     no_device_check = false;
   }
+#endif
 }
 
 void VG99_set_sysex_watchdog() {
+#ifdef COMPILE_VG99
   VG99sysexWatchdog = millis() + VG99_SYSEX_WATCHDOG_LENGTH;
   VG99_sysex_watchdog_running = true;
   DEBUGMSG("VG99 sysex watchdog started");
+#endif
 }
 
 void VG99_check_sysex_watchdog() {
+#ifdef COMPILE_VG99
   if ((millis() > VG99sysexWatchdog) && (VG99_sysex_watchdog_running)) {
     DEBUGMSG("VG99 sysex watchdog expired");
     Request_FC300_CTL_current_assign(); // Try reading the assign again
   }
+#endif
 }
 
 void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_VG99
   uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
 
   if (VG99_current_assign < FC300_NUMBER_OF_CTLS) { // Check if we have not reached the last assign.
@@ -583,10 +661,14 @@ void read_FC300_CTL_assigns(const unsigned char* sxdata, short unsigned int sxle
       Request_FC300_CTL_current_assign(); //Request the next assign
     }
   }
+#endif
 }
 
 // ********************************* Section 5: VG99 controller parameter feedback ***********************************************
 // Names of parameters are stored here into program memory. This section contains only one function.
+
+#ifdef COMPILE_VG99
+
 
 struct Parameter {  // Datastructure for parameters:
   uint16_t address; // Address of the assign
@@ -832,7 +914,8 @@ const PROGMEM char VG99_sublists[VG99_NO_OF_SUBLISTS][VG99_SIZE_OF_SUBLISTS][8] 
   // Sublist 3 from the "Harmony" table on page 56 of the VG99 MIDI impementation guide
   { "-2oct", "-14th", "-13th", "-12th", "-11th", "-10th", "-9th",
     "-1oct", "-7th", "-6th", "-5th", "-4th", "-3rd", "-2nd", "TONIC",
-    "+2nd", "+3rd", "+4th", "+5th", "+6th", "+7th", "+1oct", "+9th", "+10th", "+11th"
+    "+2nd", "+3rd", "+4th", "+5th", "+6th", "+7th", "+1oct", "+9th", "+10th", "+11th",
+    "+12th", "+13th", "+14th", "+2oct", "USER"
   },
 
   // Sublist 4 from the "COSM AMP" table on page 71 of the VG99 MIDI impementation guide
@@ -892,9 +975,11 @@ const PROGMEM uint8_t VG99_polyFX_colours[4][2] = {
   { FX_PITCH_COLOUR_ON, FX_PITCH_COLOUR_OFF }, // Colour for "OCTAVE"
   { FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF }, // Colour for "SLOW GR"
 };
+#endif
 
 // Will lookup parameter name in a table- for the fx1 and fx2 types it will also mention the type of effect.
 void VG99_display_parameter(uint16_t address, uint8_t type) {
+#ifdef COMPILE_VG99
   String msg1, msg2;
   uint8_t part;
   uint8_t sublist;
@@ -915,10 +1000,12 @@ void VG99_display_parameter(uint16_t address, uint8_t type) {
       }
     }
   }
+#endif
 }
 
 // Looks for the on_colour as specified in the VG99_parameters array.
 void VG99_find_colours(uint8_t VG99_current_assign) {
+#ifdef COMPILE_VG99
   uint8_t part;
   uint16_t address; // the address of the current assign target
   uint8_t type;
@@ -945,6 +1032,7 @@ void VG99_find_colours(uint8_t VG99_current_assign) {
   }
   FC300_ctls[VG99_current_assign].colour_on = on_colour; // Store the colours in the assign array
   FC300_ctls[VG99_current_assign].colour_off = off_colour;
+#endif
 }
 /*
 uint8_t VG99_find_colour_on(uint16_t address, uint8_t type) {

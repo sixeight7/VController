@@ -44,11 +44,14 @@ uint8_t GR55_current_assign = 255; // The assign that is being read - set to a h
 unsigned long GR55sysexWatchdog = 0;
 boolean GR55_sysex_watchdog_running = false;
 
+#define GR55_SYSEX_DELAY_LENGTH 10 // time between sysex messages (in msec)
+unsigned long GR55sysexDelay = 0;
 
 // ********************************* Section 2: G%55 comon MIDI in functions ********************************************
 
-void check_SYSEX_in_GR55(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void check_SYSEX_in_GR55(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GR55
+
   // Check if it is a message from a GR-55
   if ((sxdata[2] == GR55_device_id) && (sxdata[3] == 0x00) && (sxdata[4] == 0x00) && (sxdata[5] == 0x53)) {
     uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
@@ -84,19 +87,23 @@ void check_SYSEX_in_GR55(const unsigned char* sxdata, short unsigned int sxlengt
     // Check assigns
     read_GR55_CTL_assigns(sxdata, sxlength);
   }
+#endif
 }
 
 void check_PC_in_GR55(byte channel, byte program) {
+#ifdef COMPILE_GR55
   // Check the source by checking the channel
   if (channel == GR55_MIDI_channel) { // GR55 outputs a program change
     GR55_patch_number = (GR55_CC01 * 128) + program;
     if (GR55_patch_number > 2047) GR55_patch_number = GR55_patch_number - 1751; // There is a gap of 1752 patches in the numbering system of the GR-55. This will close it.
     GR55_do_after_patch_selection();
   }
+#endif
 }
 
-void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GR55
+
   // Check if it is a GP-10
   if ((sxdata[6] == 0x53) && (sxdata[7] == 0x02) && (GR55_detected == false)) {
     GR55_detected = true;
@@ -108,12 +115,21 @@ void GR55_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     request_GR55(GR55_REQUEST_PATCH_NUMBER); // Request the current patch number
     GR55_do_after_patch_selection();
   }
+#endif
 }
 
 // ********************************* Section 3: GR55 comon MIDI out functions ********************************************
 
-void write_GR55(uint32_t address, uint8_t value) // For sending one data byte
-{
+void GR55_check_sysex_delay() { // Will delay if last message was within GR55_SYSEX_DELAY_LENGTH (10 ms)
+#ifdef COMPILE_GR55
+  while (millis() - GR55sysexDelay <= GR55_SYSEX_DELAY_LENGTH) {}
+  GR55sysexDelay = millis();
+#endif
+}
+
+void write_GR55(uint32_t address, uint8_t value) { // For sending one data byte
+#ifdef COMPILE_GR55
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[14] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x053, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
@@ -122,10 +138,13 @@ void write_GR55(uint32_t address, uint8_t value) // For sending one data byte
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(13, sysexmessage);
   if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(13, sysexmessage);
   debug_sysex(sysexmessage, 14, "out(GR55)");
+  GR55_check_sysex_delay();
+#endif
 }
 
-void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
-{
+void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) { // For sending two data bytes
+#ifdef COMPILE_GR55
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x053, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
@@ -134,10 +153,13 @@ void write_GR55(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
   if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GR55)");
+  GR55_check_sysex_delay();
+#endif
 }
 
-void request_GR55(uint32_t address, uint8_t no_of_bytes)
-{
+void request_GR55(uint32_t address, uint8_t no_of_bytes) {
+#ifdef COMPILE_GR55
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[17] = {0xF0, 0x41, GR55_device_id, 0x00, 0x00, 0x53, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
@@ -146,18 +168,23 @@ void request_GR55(uint32_t address, uint8_t no_of_bytes)
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(16, sysexmessage);
   if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(16, sysexmessage);
   debug_sysex(sysexmessage, 17, "out(GR55)");
+  GR55_check_sysex_delay();
+#endif
 }
 
 // Send CC message to GR-55
 void GR55_send_cc(uint8_t control, uint8_t value) {
+#ifdef COMPILE_GR55
   if (GR55_MIDI_port == USBMIDI_PORT) usbMIDI.sendControlChange(control, value, GR55_MIDI_channel);
   if (GR55_MIDI_port == MIDI1_PORT) MIDI1.sendControlChange(control, value, GR55_MIDI_channel);
   if (GR55_MIDI_port == MIDI2_PORT) MIDI2.sendControlChange(control, value, GR55_MIDI_channel);
   if (GR55_MIDI_port == MIDI3_PORT) MIDI3.sendControlChange(control, value, GR55_MIDI_channel);
+#endif
 }
 
 // Send Program Change to GR-55
 void GR55_SendProgramChange(uint16_t new_patch) {
+#ifdef COMPILE_GR55
   if (new_patch == GR55_patch_number) GR55_unmute();
   GR55_patch_number = new_patch;
 
@@ -185,18 +212,21 @@ void GR55_SendProgramChange(uint16_t new_patch) {
     MIDI3.sendControlChange(0 , GR55_patch_send / 128, GR55_MIDI_channel); // First send the bank number to CC00
     MIDI3.sendProgramChange(GR55_patch_send % 128, GR55_MIDI_channel);
   }
+  
+  GP10_mute();
+  VG99_mute();
   GR55_do_after_patch_selection();
+#endif
 }
 
 void GR55_do_after_patch_selection() {
+#ifdef COMPILE_GR55
   no_device_check = true; // disables checking for devices during reading of GR_55
   GR55_current_assign = 255; // In case we were still in the middle of a previous patch change, switch off the lot
   GR55_request_onoff = false;
   GR55_sysex_watchdog_running = false;
-  
   GR55_on = true;
-  GP10_mute();
-  VG99_mute();
+  
   GR55_request_name();
   //GR55_request_guitar_switch_states(); // Should come after patch name is read
   //GR55_request_stompbox_states();
@@ -205,26 +235,35 @@ void GR55_do_after_patch_selection() {
   update_lcd = true;
   EEPROM.write(EEPROM_GR55_PATCH_MSB, (GR55_patch_number / 256));
   EEPROM.write(EEPROM_GR55_PATCH_LSB, (GR55_patch_number % 256));
+#endif
 }
 
-void GR55_request_patch_number()
-{
+void GR55_request_patch_number() {
+#ifdef COMPILE_GR55
+
   request_GR55(GR55_REQUEST_PATCH_NUMBER);
+#endif
 }
 
-void GR55_request_name()
-{
+void GR55_request_name() {
+#ifdef COMPILE_GR55
+
+  GR55_patch_name = "                ";
   request_GR55(GR55_REQUEST_PATCHNAME);
+#endif
 }
 
 void GR55_send_bpm() {
+#ifdef COMPILE_GR55
   write_GR55(GR55_TEMPO, bpm / 16, bpm % 16); // Tempo is modulus 16. It's all so very logical. NOT.
+#endif
 }
 
 // Switch GR-55 CTL pedal on and off
 boolean CTL_LED = false;
-void GR55_toggle_CTL_LED()
-{
+void GR55_toggle_CTL_LED() {
+#ifdef COMPILE_GR55
+
   CTL_LED = !CTL_LED;
   if (CTL_LED) {
     show_status_message("CTL pedal on     ");
@@ -239,6 +278,7 @@ void GR55_toggle_CTL_LED()
     //    uint8_t sysexbuffer[15] = GR55_CTL_LED_OFF;
     //    usbMIDI.sendSysEx(15, sysexbuffer);
   }
+#endif
 }
 
 // ********************************* Section 4: GR55 stompbox functions ********************************************
@@ -249,15 +289,18 @@ void GR55_toggle_CTL_LED()
 
 
 void GR55_request_guitar_switch_states() {
+#ifdef COMPILE_GR55
   GR55_select_LED = GR55_PATCH_COLOUR; //Switch the LED on
   request_GR55(GR55_SYNTH1_SW, 1);
   request_GR55(GR55_SYNTH2_SW, 1);
   request_GR55(GR55_COSM_GUITAR_SW, 1);
   request_GR55(GR55_NORMAL_PU_SW, 1);
   GR55_request_onoff = true;
+#endif
 }
 
 void GR55_check_guitar_switch_states(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GR55
 
   if (GR55_request_onoff == true) {
     uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
@@ -281,9 +324,11 @@ void GR55_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
 
     }
   }
+#endif
 }
 
 void GR55_select_switch() {
+#ifdef COMPILE_GR55
   if ((GR55_on) && (!US20_emulation_state_changed)) {
     GR55_always_on_toggle();
   }
@@ -294,9 +339,11 @@ void GR55_select_switch() {
     if (mode != MODE_GP10_GR55_COMBI) show_status_message(GR55_patch_name); // Show the correct patch name
     US20_emulation_state_changed = false;
   }
+#endif
 }
 
 void GR55_always_on_toggle() {
+#ifdef COMPILE_GR55
   GR55_always_on = !GR55_always_on; // Toggle GR55_always_on
   if (GR55_always_on) {
     GR55_unmute();
@@ -307,30 +354,37 @@ void GR55_always_on_toggle() {
     show_status_message("GR55 can be muted");
     US20_emulation_state_changed = true;
   }
+#endif
 }
 
 void GR55_unmute() {
+#ifdef COMPILE_GR55
   GR55_on = true;
   GR55_select_LED = GR55_PATCH_COLOUR; //Switch the LED on
   write_GR55(GR55_SYNTH1_SW, GR55_synth1_onoff); // Switch synth 1 off
   write_GR55(GR55_SYNTH2_SW, GR55_synth2_onoff); // Switch synth 1 off
   write_GR55(GR55_COSM_GUITAR_SW, GR55_COSM_onoff); // Switch COSM guitar on
   write_GR55(GR55_NORMAL_PU_SW, GR55_nrml_pu_onoff); // Switch normal pu on
+#endif
 }
 
 void GR55_mute() {
+#ifdef COMPILE_GR55
   if (!GR55_always_on) {
     GR55_mute_now();
   }
+#endif
 }
 
 void GR55_mute_now() { // Needed a second version, because the GR55 must always mute when engaging global tuner.
+#ifdef COMPILE_GR55
   GR55_on = false;
   GR55_select_LED = GR55_OFF_COLOUR; //Switch the LED off
   write_GR55(GR55_SYNTH1_SW, 0x01); // Switch synth 1 off
   write_GR55(GR55_SYNTH2_SW, 0x01); // Switch synth 1 off
   write_GR55(GR55_COSM_GUITAR_SW, 0x01); // Switch COSM guitar off
   write_GR55(GR55_NORMAL_PU_SW, 0x01); // Switch normal pu off
+#endif
 }
 
 // *************************************************************************************************
@@ -382,6 +436,7 @@ GR55_CTL GR55_ctls[GR55_NUMBER_OF_CTLS] = {
 };
 
 void GR55_stomp_press(uint8_t number) {
+#ifdef COMPILE_GR55
 
   // Press the pedal via cc
   GR55_send_cc(GR55_ctls[number].cc , 127);
@@ -401,9 +456,11 @@ void GR55_stomp_press(uint8_t number) {
     show_status_message("CC#" + String(GR55_ctls[number].cc) + " (" + msg + ")");
   }
 
+#endif
 }
 
 void GR55_stomp_release(uint8_t number) {
+#ifdef COMPILE_GR55
 
   // Press the pedal via cc
   GR55_send_cc(GR55_ctls[number].cc , 0);
@@ -412,6 +469,7 @@ void GR55_stomp_release(uint8_t number) {
     if (GR55_ctls[number].assign_on == true) GR55_ctls[number].LED = GR55_ctls[number].colour_off; // Switch the LED off with the GP10 stomp colour
     else GR55_ctls[number].LED = 0; //Or if the assign is not set, switch the LED off
   }
+#endif
 }
 
 // Reading of the assigns - to avoid MIDI buffer overruns in the GR55, the assigns are read one by one
@@ -423,13 +481,16 @@ void GR55_stomp_release(uint8_t number) {
 //    It will then update GR55_current_assign and request the next assign - which brings us back to step 2.
 
 void Request_GR55_CTL_first_assign() {
+#ifdef COMPILE_GR55
   GR55_current_assign = 0; //After the name is read, the assigns can be read
   DEBUGMSG("Start reading GR55 assigns");
   GR55_set_sysex_watchdog();
   Request_GR55_CTL_current_assign();
+#endif
 }
 
 void Request_GR55_CTL_current_assign() { //Will request the next assign - the assigns are read one by one, otherwise the data will not arrive!
+#ifdef COMPILE_GR55
   if (GR55_current_assign < GR55_NUMBER_OF_CTLS) {
     DEBUGMSG("Request GR55_current_assign=" + String(GR55_current_assign));
     request_GR55(GR55_ctls[GR55_current_assign].assign_addr, 12); // Request 12 bytes for the assign
@@ -439,22 +500,28 @@ void Request_GR55_CTL_current_assign() { //Will request the next assign - the as
     GR55_sysex_watchdog_running = false; // Stop the timer
     no_device_check = false; // restart device check
   }
+#endif
 }
 
 void GR55_set_sysex_watchdog() {
+#ifdef COMPILE_GR55
   GR55sysexWatchdog = millis() + GR55_SYSEX_WATCHDOG_LENGTH;
   GR55_sysex_watchdog_running = true;
   DEBUGMSG("GR55 sysex watchdog started");
+#endif
 }
 
 void GR55_check_sysex_watchdog() {
+#ifdef COMPILE_GR55
   if ((millis() > GR55sysexWatchdog) && (GR55_sysex_watchdog_running)) {
     DEBUGMSG("GR55 sysex watchdog expired");
     Request_GR55_CTL_current_assign(); // Try reading the assign again
   }
+#endif
 }
 
 void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GR55
   uint32_t address = (sxdata[7] << 24) + (sxdata[8] << 16) + (sxdata[9] << 8) + sxdata[10]; // Make the address 32 bit
 
   if (GR55_current_assign < GR55_NUMBER_OF_CTLS) { // Check if we have not reached the last assign.
@@ -515,8 +582,10 @@ void read_GR55_CTL_assigns(const unsigned char* sxdata, short unsigned int sxlen
       Request_GR55_CTL_current_assign(); //Request the next assign
     }
   }
+#endif
 }
 
+#ifdef COMPILE_GR55
 struct Assign {  // Datastructure for parameters:
   uint16_t target; // Target of the assign as given in the assignments of the GR55
   char name[17];    // Name of the assign that will appear on the display
@@ -622,9 +691,12 @@ const PROGMEM uint8_t GR55_MOD_colours[14][2] = {
   { FX_MODULATE_COLOUR_ON, FX_MODULATE_COLOUR_OFF }, // Colour for "CHORUS",
   { FX_FILTER_COLOUR_ON, FX_FILTER_COLOUR_OFF } // Colour for "EQ"
 };
+#endif
+
 
 // Looks for the on_colour as specified in the VG99_parameters array.
 void GR55_target_lookup(uint8_t current_assign) {
+#ifdef COMPILE_GR55
   uint8_t part;
   uint16_t target; // the address of the current assign target
 
@@ -639,10 +711,12 @@ void GR55_target_lookup(uint8_t current_assign) {
       GR55_ctls[current_assign].target_address = GR55_parameters[part][i].address;
     }
   }
+#endif
 }
 
 // Will lookup parameter name in a table- for the fx1 and fx2 types it will also mention the type of effect.
 void GR55_display_parameter(uint16_t target, uint8_t type, uint8_t number) {
+#ifdef COMPILE_GR55
   String msg, msg1, msg2;
   uint8_t part;
   uint8_t sublist;
@@ -666,9 +740,11 @@ void GR55_display_parameter(uint16_t target, uint8_t type, uint8_t number) {
     }
   }
   show_status_message(msg);
+#endif
 }
 
 void GR55_find_colours(uint8_t current_assign) {
+#ifdef COMPILE_GR55
 
   uint8_t on_colour = GR55_STOMP_COLOUR_ON; // Set the default on colour
   uint8_t off_colour = GR55_STOMP_COLOUR_OFF; // Set the default on colour
@@ -707,4 +783,7 @@ void GR55_find_colours(uint8_t current_assign) {
     GR55_ctls[current_assign].colour_off = on_colour;
   }
   GR55_ctls[current_assign].reversed = reversed;
+#endif
 }
+
+

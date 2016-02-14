@@ -19,6 +19,10 @@
 ** 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 **
 ****************************************************************************/
+// Compiler settings
+#define COMPILE_GP10
+#define COMPILE_GR55
+#define COMPILE_VG99
 
 // Basic settings of the VController - here you can quickly program the pedal
 
@@ -257,7 +261,7 @@ uint8_t VG99_device_id = 0x10;
 uint8_t FC300_device_id = 0x00;
 
 // Pedal can be in different modes. In each mode the buttons have different functions
-uint8_t mode = 11; // Variable mode is declared. Last state is remembered in EEPROM. If you set it to a different value than 0, the mode is overruled from EEPROM
+uint8_t mode = 0; // Variable mode is declared. Last state is remembered in EEPROM. If you set it to a different value than 0, the mode is overruled from EEPROM
 uint8_t previous_mode = 0;
 uint8_t mode_before_tuning = 0;
 uint32_t bpm = 120; // Variable bpm is declared. Last tempo is remembered in EEPROM

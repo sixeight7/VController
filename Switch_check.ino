@@ -27,8 +27,9 @@
 
 // ***************************** Settings you may want to change *****************************
 #define LONG_PRESS_TIMER_LENGTH 1000 // Timer used for detecting long-pressing switch. Time is in milliseconds
+#define EXTRA_LONG_PRESS_TIMER_LENGTH 3000
 unsigned long Long_press_timer = 0;
-
+unsigned long Extra_long_press_timer = 0;
 
 // ***************************** Hardware settings *****************************
 // Define pin numbers
@@ -58,6 +59,7 @@ unsigned long Long_press_timer = 0;
 int switch_pressed = 0; //Variable set when switch is pressed
 int switch_released = 0; //Variable set when switch is released
 int switch_long_pressed = 0; //Variable set when switch is pressed long (check LONG_PRESS_TIMER_LENGTH for when this will happen)
+int switch_extra_long_pressed = 0; //Variable set when switch is pressed long (check LONG_PRESS_TIMER_LENGTH for when this will happen)
 
 int switch_long_pressed_memory = 0;
 int active_column = 1; // Which switch column is being read?
@@ -188,7 +190,7 @@ void main_switch_check()
       if ((switch2.fallingEdge()) && (switch5.read() == HIGH)) switch_pressed = 2; // Also check state of the switch above
 
       // Check for switches in column 2 being released
-      if ((check_released) && (switch11.risingEdge())) switch_released = 10;
+      if ((check_released) && (switch11.risingEdge())) switch_released = 11;
       if ((check_released) && (switch8.risingEdge()) && (switch11.read() == HIGH)) switch_released = 8; // Also check state of the switch above
       if ((check_released) && (switch5.risingEdge()) && (switch8.read() == HIGH)) switch_released = 5; // Also check state of the switch above
       if ((check_released) && (switch2.risingEdge()) && (switch5.read() == HIGH)) switch_released = 2; // Also check state of the switch above
@@ -258,12 +260,22 @@ void main_switch_check()
   // Now check for Long pressing a button
   if (switch_pressed > 0) {
     Long_press_timer = millis(); // Set timer on switch pressed
+    Extra_long_press_timer = millis(); // Set timer on switch pressed
     switch_long_pressed_memory = switch_pressed; // Remember the button that was pressed
   }
-  if (switch_released > 0) Long_press_timer = 0;  //Reset the timer on switch released
+  
+  if (switch_released > 0) {
+    Long_press_timer = 0;  //Reset the timer on switch released
+    Extra_long_press_timer = 0;
+  }
 
   if ((millis() - Long_press_timer > LONG_PRESS_TIMER_LENGTH) && (Long_press_timer > 0)) {
     switch_long_pressed = switch_long_pressed_memory; //pass on the buttonvalue we remembered before
-    Long_press_timer = 0;  //Reset the timer when timer runs out
+    Long_press_timer = 0;
+  }
+  
+  if ((millis() - Extra_long_press_timer > EXTRA_LONG_PRESS_TIMER_LENGTH) && (Extra_long_press_timer > 0)) {
+    switch_extra_long_pressed = switch_long_pressed_memory; //pass on the buttonvalue we remembered before
+    Extra_long_press_timer = 0;
   }
 }

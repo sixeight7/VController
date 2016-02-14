@@ -49,10 +49,17 @@ uint8_t GP10_MIDI_port = 0; // What port is the GP10 connected to (0 - 3)
 
 uint8_t GP10_current_stomp = 255; //Keeps track of which stomp to read
 
+#define GP10_SYSEX_DELAY_LENGTH 10 // time between sysex messages (in msec)
+unsigned long GP10sysexDelay = 0;
+
+
+uint8_t GP10_FX_toggle_LED = 0; // The LED shown for the FX type button
+
 // ********************************* Section 2: GP10 comon MIDI in functions ********************************************
 
-void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GP10
+
   // Check if it is a message from a GP-10
   if ((sxdata[2] == GP10_device_id) && (sxdata[3] == 0x00) && (sxdata[4] == 0x00) && (sxdata[5] == 0x00) && (sxdata[6] == 0x05) && (sxdata[7] == 0x12)) {
     uint32_t address = (sxdata[8] << 24) + (sxdata[9] << 16) + (sxdata[10] << 8) + sxdata[11]; // Make the address 32 bit
@@ -90,19 +97,24 @@ void check_SYSEX_in_GP10(const unsigned char* sxdata, short unsigned int sxlengt
     // Check if it is some other stompbox function and copy the status to the right LED
     GP10_check_stompbox_states(sxdata, sxlength);
   }
+#endif
 }
 
 
 void check_PC_in_GP10(byte channel, byte program) {
+#ifdef COMPILE_GP10
+
   // Check the source by checking the channel
   if (channel == GP10_MIDI_channel) { // GP10 outputs a program change
     GP10_patch_number = program;
     GP10_do_after_patch_selection();
   }
+#endif
 }
 
-void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GP10
+
   // Check if it is a GP-10
   if ((sxdata[6] == 0x05) && (sxdata[7] == 0x03) && (GP10_detected == false)) {
     GP10_detected = true;
@@ -114,12 +126,22 @@ void GP10_identity_check(const unsigned char* sxdata, short unsigned int sxlengt
     write_GP10(GP10_EDITOR_MODE_ON); // Put the GP10 in EDITOR mode - otherwise tuner will not work
     GP10_do_after_patch_selection();
   }
+#endif
 }
 
 // ********************************* Section 3: GP10 comon MIDI out functions ********************************************
 
-void write_GP10(uint32_t address, uint8_t value) // For sending one data byte
-{
+void GP10_check_sysex_delay() { // Will delay if last message was within GP10_SYSEX_DELAY_LENGTH (10 ms)
+#ifdef COMPILE_GP10
+
+  while (millis() - GP10sysexDelay <= GP10_SYSEX_DELAY_LENGTH) {}
+  GP10sysexDelay = millis();
+#endif
+}
+
+void write_GP10(uint32_t address, uint8_t value) { // For sending one data byte
+#ifdef COMPILE_GP10
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value); // Calculate the Roland checksum
   uint8_t sysexmessage[15] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value, checksum, 0xF7};
@@ -128,10 +150,13 @@ void write_GP10(uint32_t address, uint8_t value) // For sending one data byte
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(14, sysexmessage);
   if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(14, sysexmessage);
   debug_sysex(sysexmessage, 15, "out(GP10)");
+  //GP10_check_sysex_delay();
+#endif
 }
 
-void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) // For sending two data bytes
-{
+void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) { // For sending two data bytes
+#ifdef COMPILE_GP10
+
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] + value1 + value2); // Calculate the Roland checksum
   uint8_t sysexmessage[16] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x12, ad[3], ad[2], ad[1], ad[0], value1, value2, checksum, 0xF7};
@@ -140,10 +165,13 @@ void write_GP10(uint32_t address, uint8_t value1, uint8_t value2) // For sending
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(15, sysexmessage);
   if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(15, sysexmessage);
   debug_sysex(sysexmessage, 16, "out(GP10)");
+  //GP10_check_sysex_delay();
+#endif
 }
 
-void request_GP10(uint32_t address, uint8_t no_of_bytes)
-{
+void request_GP10(uint32_t address, uint8_t no_of_bytes) {
+#ifdef COMPILE_GP10
+  
   uint8_t *ad = (uint8_t*)&address; //Split the 32-bit address into four bytes: ad[3], ad[2], ad[1] and ad[0]
   uint8_t checksum = calc_checksum(ad[3] + ad[2] + ad[1] + ad[0] +  no_of_bytes); // Calculate the Roland checksum
   uint8_t sysexmessage[18] = {0xF0, 0x41, GP10_device_id, 0x00, 0x00, 0x00, 0x05, 0x11, ad[3], ad[2], ad[1], ad[0], 0x00, 0x00, 0x00, no_of_bytes, checksum, 0xF7};
@@ -152,12 +180,15 @@ void request_GP10(uint32_t address, uint8_t no_of_bytes)
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendSysEx(17, sysexmessage);
   if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendSysEx(17, sysexmessage);
   debug_sysex(sysexmessage, 18, "out(GP10)");
+  //GP10_check_sysex_delay();
+#endif
 }
 
 uint8_t GP10_previous_patch_number = 0;
 uint8_t GP10_patch_memory = 0;
 
 void GP10_SendProgramChange(uint8_t new_patch) {
+#ifdef COMPILE_GP10
 
   if (new_patch == GP10_patch_number) GP10_unmute();
   GP10_patch_number = new_patch;
@@ -166,37 +197,49 @@ void GP10_SendProgramChange(uint8_t new_patch) {
   if (GP10_MIDI_port == MIDI2_PORT) MIDI2.sendProgramChange(new_patch, GP10_MIDI_channel);
   if (GP10_MIDI_port == MIDI3_PORT) MIDI3.sendProgramChange(new_patch, GP10_MIDI_channel);
   DEBUGMSG("out(GP10) PC" + String(new_patch)); //Debug
+  GR55_mute();
+  VG99_mute();
   GP10_do_after_patch_selection();
+#endif
 }
 
 void GP10_do_after_patch_selection() {
-  GP10_on = true;
-  GR55_mute();
-  VG99_mute();
+#ifdef COMPILE_GP10
+
   GP10_current_stomp = 255; // Stop reading stomps in case we came from there
   GP10_request_onoff = false;
-  
+  GP10_on = true;
   GP10_request_name(); // After name is read the guitar states will be read
-                       // And then the stromps will be requested
+  // And then the stromps will be requested
   //Request_GP10_first_stomp();
   if (SEND_GLOBAL_TEMPO_AFTER_PATCH_CHANGE == true) GP10_send_bpm();
   update_LEDS = true;
   update_lcd = true;
   EEPROM.write(EEPROM_GP10_PATCH_NUMBER, GP10_patch_number);
+#endif
 }
 
-void GP10_request_patch_number()
-{
+void GP10_request_patch_number() {
+  #ifdef COMPILE_GP10
+
   request_GP10(GP10_REQUEST_PATCH_NUMBER);
+#endif
 }
 
-void GP10_request_name()
-{
+void GP10_request_name() {
+  #ifdef COMPILE_GP10
+
+  GP10_patch_name = "                ";
   request_GP10(GP10_REQUEST_PATCH_NAME);
+#endif
 }
+
 
 void GP10_send_bpm() {
+#ifdef COMPILE_GP10
+
   write_GP10(GP10_TEMPO, bpm / 16, bpm % 16); // Tempo is modulus 16. It's all so very logical. NOT.
+#endif
 }
 
 // ********************************* Section 4: GP10 stompbox functions ********************************************
@@ -206,13 +249,18 @@ void GP10_send_bpm() {
 // and switching both off when guitar is muted and back to original state when the GP10 is selected
 
 void GP10_request_guitar_switch_states() {
+  #ifdef COMPILE_GP10
+
   GP10_select_LED = GP10_PATCH_COLOUR; //Switch the LED on
   request_GP10(GP10_COSM_GUITAR_SW, 1);
   request_GP10(GP10_NORMAL_PU_SW, 1);
   GP10_request_onoff = true;
+#endif
 }
 
 void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GP10
+
   if (GP10_request_onoff == true) {
     uint32_t address = (sxdata[8] << 24) + (sxdata[9] << 16) + (sxdata[10] << 8) + sxdata[11]; // Make the address 32 bit
     if (address == GP10_COSM_GUITAR_SW) {
@@ -225,9 +273,12 @@ void GP10_check_guitar_switch_states(const unsigned char* sxdata, short unsigned
       Request_GP10_first_stomp(); //Now read the GP10 stomps
     }
   }
+#endif
 }
 
 void GP10_select_switch() {
+#ifdef COMPILE_GP10
+
   if ((GP10_on) && (!US20_emulation_state_changed)) {
     GP10_always_on_toggle();
   }
@@ -238,10 +289,13 @@ void GP10_select_switch() {
     if (mode != MODE_GP10_GR55_COMBI) show_status_message(GP10_patch_name); // Show the correct patch name
     US20_emulation_state_changed = false;
   }
+#endif
 }
 
 void GP10_always_on_toggle() {
-  GP10_always_on = !GP10_always_on; // Toggle GP10_always_on
+#ifdef COMPILE_GP10
+
+GP10_always_on = !GP10_always_on; // Toggle GP10_always_on
   if (GP10_always_on) {
     GP10_unmute();
     show_status_message("GP10 always ON");
@@ -251,17 +305,24 @@ void GP10_always_on_toggle() {
     show_status_message("GP10 can be muted");
     US20_emulation_state_changed = true;
   }
+#endif
 }
 
+
 void GP10_unmute() {
+#ifdef COMPILE_GP10
+
   GP10_on = true;
   GP10_select_LED = GP10_PATCH_COLOUR; //Switch the LED on
   //write_GP10(GP10_FOOT_VOL, 100); // Switching guitars does not work - the wrong values are read from the GP-10. ?????
   write_GP10(GP10_COSM_GUITAR_SW, GP10_COSM_onoff); // Switch COSM guitar on
   write_GP10(GP10_NORMAL_PU_SW, GP10_nrml_pu_onoff); // Switch normal pu on
+#endif
 }
 
 void GP10_mute() {
+#ifdef COMPILE_GP10
+
   if (GP10_always_on == false) {
     GP10_on = false;
     GP10_select_LED = GP10_OFF_COLOUR; //Switch the LED off
@@ -269,7 +330,9 @@ void GP10_mute() {
     write_GP10(GP10_COSM_GUITAR_SW, 0x00); // Switch COSM guitar off
     write_GP10(GP10_NORMAL_PU_SW, 0x00); // Switch normal pu off
   }
+#endif
 }
+
 
 // Here we define some stompboxes for fixed parameters of the GP10
 
@@ -334,20 +397,24 @@ uint8_t GP10_FX_colours[17][2] = {
 
 // Sends requests to the GP10 to send the current settings of all the GP10_stomps
 void Request_GP10_first_stomp() {
+#ifdef COMPILE_GP10
   GP10_current_stomp = 0; //After the name is read, the assigns can be read
   GP10_request_next_stomp();
+#endif
 }
 
-void GP10_request_next_stomp()
-{
+void GP10_request_next_stomp() {
+#ifdef COMPILE_GP10
+
   if (GP10_current_stomp < GP10_NUMBER_OF_STOMPS) {
     request_GP10(GP10_stomps[GP10_current_stomp].address, 2); // We read two bytes, because the second one often contains the FX type
   }
+#endif
 }
 
 // Reads out the parameters that were requested with GP10_request_stompbox_states()
-void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int sxlength)
-{
+void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int sxlength) {
+#ifdef COMPILE_GP10
   uint32_t address = (sxdata[8] << 24) + (sxdata[9] << 16) + (sxdata[10] << 8) + sxdata[11]; // Make the address 32 bit
   for (uint8_t addr_count = 0; addr_count < GP10_NUMBER_OF_STOMPS; addr_count++) {
     if (address == GP10_stomps[addr_count].address) {
@@ -361,10 +428,13 @@ void GP10_check_stompbox_states(const unsigned char* sxdata, short unsigned int 
       if (GP10_current_stomp < GP10_NUMBER_OF_STOMPS) GP10_current_stomp++; //Move to the next stomp if we have to...
     }
   }
+#endif
 }
 
 // Toggle GP10 stompbox parameter
 void GP10_stomp(uint8_t number) {
+#ifdef COMPILE_GP10
+
   if (number == GP10_FX_stomp) GP10_FX_type_select(); // If we are toggling FX, first select the right type
   if (GP10_stomps[number].LED == GP10_stomp_LED_off_colour(number)) {
     GP10_stomps[number].LED = GP10_stomp_LED_on_colour(number); // Switch the LED on with the GP10 stomp colour
@@ -386,8 +456,10 @@ void GP10_stomp(uint8_t number) {
     }
     show_status_message(msg + " OFF");
   }
+#endif
 }
 
+#ifdef COMPILE_GP10
 // Finds the right colour for an FX LED that is on
 uint8_t GP10_stomp_LED_on_colour(uint8_t number) {
   if (GP10_stomps[number].colour_on == GP10_FX_COLOUR_ON) { // Check if we have to pick the colour from the GP10_FX_colours table
@@ -407,6 +479,7 @@ uint8_t GP10_stomp_LED_off_colour(uint8_t number) {
     return GP10_stomps[number].colour_off; // Switch the LED on with the normal GP10 stomp colour
   }
 }
+#endif
 
 // Buttons to set the FX to a specific type
 #define NUMBER_OF_FX_TYPE_LEDS 16
@@ -416,6 +489,7 @@ uint8_t GP10_fx_type_LEDs[NUMBER_OF_FX_TYPE_LEDS]; //One LED for every fx LED (1
 // FX type numbers:
 // 0:OD/DS, 1:COMPRSR, 2:LIMITER, 3:EQ, 4:T.WAH, 5:P.SHIFT, 6:HARMO, 7:P. BEND, 8:PHASER, 9:FLANGER, 10:TREMOLO, 11:PAN, 12:ROTARY, 13:UNI-V, 14:CHORUS, 15:DELAY
 void GP10_fx_type_button(uint8_t type) {
+#ifdef COMPILE_GP10
   // Set the FX type
   uint8_t previous_type = GP10_stomps[GP10_FX_stomp].type;
   if (type == previous_type) {
@@ -436,15 +510,18 @@ void GP10_fx_type_button(uint8_t type) {
   // Update the LEDs
   GP10_fx_type_LEDs[previous_type] = GP10_FX_colours[previous_type][1]; // Switches off the old LED
   GP10_fx_type_LEDs[type] = GP10_FX_colours[type][0]; // New LED on
+#endif
 }
 
 void GP10_set_FX_LEDS() {
+#ifdef COMPILE_GP10
   for (uint8_t i = 0; i < NUMBER_OF_FX_TYPE_LEDS; i++) {
     GP10_fx_type_LEDs[i] = GP10_FX_colours[i][1]; //Set the FX colours to the off-state
   }
   uint8_t type = GP10_stomps[GP10_FX_stomp].type;
   GP10_fx_type_LEDs[type] = GP10_FX_colours[type][0]; // Current LED on
   GP10_FX_type_lookup(type); // Also LED in second method on
+#endif
 }
 
 // Second implemantation of FX type. This is one button, that will toggle through a number of FX types
@@ -452,10 +529,11 @@ void GP10_set_FX_LEDS() {
 uint8_t GP10_FX[GP10_FX_NUMBER_OF_SELECTABLE_FX] = {0, 4, 8, 9, 10, 12, 13}; //<= Set these to the effects you want to be able to select
 
 uint8_t GP10_FX_pointer = 0; // Pointer to he current selected FX
-uint8_t GP10_FX_toggle_LED = 0;
 bool GP10_FX_selection_active = false;
 
 void GP10_FX_toggle_button() {
+#ifdef COMPILE_GP10
+
   //Check if we are already in selection mode
   if (!GP10_FX_selection_active) {
     GP10_FX_selection_active = true; //if not switch it on
@@ -470,9 +548,12 @@ void GP10_FX_toggle_button() {
   String msgtype = GP10_sublists[0][type];
   show_status_message("FX type: " + msgtype);
   GP10_FX_toggle_LED = GP10_FX_colours[type][0]; // Set LED to the right colour
+#endif
 }
 
 void GP10_FX_type_select() {
+#ifdef COMPILE_GP10
+
   if (GP10_FX_selection_active) {
     uint8_t type = GP10_FX[GP10_FX_pointer]; // Lookup the FX type in the array
     // Set the FX type to type
@@ -480,12 +561,14 @@ void GP10_FX_type_select() {
     // Update the GP10_stomps array with the current settings
     GP10_stomps[GP10_FX_stomp].type = type; // Update the array
     GP10_stomps[GP10_FX_stomp].LED = GP10_stomp_LED_off_colour(GP10_FX_stomp); //We'll switch the LED off - so it can be switched on by the GP10_stomp function
-    GP10_FX_selection_active = false; 
+    GP10_FX_selection_active = false;
   }
+#endif
 }
 
 // Will set the GP10_FX_pointer to the effect that is equal to type
 void GP10_FX_type_lookup(uint8_t type) {
+#ifdef COMPILE_GP10
   GP10_FX_toggle_LED = 0; // Switch it off, in case we don't have the selected FX in the array
   for (uint8_t i = 0; i < GP10_FX_NUMBER_OF_SELECTABLE_FX; i++) {
     if (GP10_FX[i] == type) {
@@ -493,4 +576,7 @@ void GP10_FX_type_lookup(uint8_t type) {
       GP10_FX_toggle_LED = GP10_FX_colours[GP10_FX[i]][0]; // Set LED to the right colour
     }
   }
+#endif
 }
+
+
