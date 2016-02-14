@@ -281,7 +281,7 @@ void reset_tap_tempo_LED() {
   bpm_LED_timer_length = BPM_LED_ON_TIME;  // Set the time for the timer
 }
 
-// Bass mode: sends a CC message with the number of the lowest string that is being played.
+// Autobass mode: sends a CC message with the number of the lowest string that is being played.
 // By making smart assigns on a device, you can hear just the bass note played
 #define GUITAR_TO_MIDI_CHANNEL 1 //The MIDI channel of the first string
 #define BASS_CC_NUMBER 15 //The CC number for the bass control
