@@ -1,5 +1,7 @@
-# VController
+# VController v1
 Dedicated MIDI controller for Boss GP-10  / Roland GR-55 and Roland VG-99
+
+This version has been outdated by the VController v2: https://github.com/sixeight7/VController_v2
 
 # Features
 * Patch selection - view of patch names for all three devices.
